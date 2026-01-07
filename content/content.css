@@ -1,0 +1,317 @@
+/* Inline Popup Styles */
+.Vocabulary-popup {
+  position: absolute;
+  z-index: 999999;
+  transform: translateX(-50%);
+  animation: Vocabulary-slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.Vocabulary-popup-content {
+  position: relative;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0;
+  min-width: 300px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.Vocabulary-popup-content::before {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #ffffff;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.Vocabulary-popup-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px;
+  color: white;
+}
+
+.Vocabulary-word-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.Vocabulary-word-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.Vocabulary-word-text {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.Vocabulary-translation-section {
+  max-width: 400px;
+  padding: 8px!important;
+  min-height: 50px;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.Vocabulary-translation-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #667eea;
+  font-size: 13px;
+  padding: 20px;
+  font-weight: 500;
+}
+
+.Vocabulary-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: Vocabulary-spin 0.7s linear infinite;
+}
+
+.Vocabulary-translation-content {
+  animation: Vocabulary-fadeIn 0.3s ease;
+  padding: 16px;
+}
+
+.Vocabulary-translation-item {
+  margin-bottom: 16px!important;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.03);    
+  transition: all 0.2s ease;
+}
+
+.Vocabulary-translation-item:hover {
+  background: rgba(102, 126, 234, 0.06);
+  transform: translateX(2px);
+}
+
+.Vocabulary-translation-item:last-child {
+  margin-bottom: 0;
+}
+
+.Vocabulary-translation-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #667eea;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.Vocabulary-translation-result {
+  font-size: 14px;
+  color: #2c3e50;
+  line-height: 1.6;
+  font-weight: 500;
+  padding-left: 2px;
+}
+
+.Vocabulary-translation-error {
+  font-size: 13px;
+  color: #dc3545;
+  font-style: italic;
+  text-align: center;
+  padding: 12px;
+}
+
+.Vocabulary-translation-info {
+  font-size: 13px;
+  color: #667eea;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.Vocabulary-translation-info::before {
+  content: "💡";
+  font-size: 16px;
+}
+
+.Vocabulary-popup-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px!important;
+}
+
+.Vocabulary-btn {
+  position: relative;
+  background: #f8f9fa;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px!important;
+  cursor: pointer !important;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  pointer-events: auto !important;
+  z-index: 9999 !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.Vocabulary-btn:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.Vocabulary-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.Vocabulary-btn svg {
+  color: #667eea;
+  transition: transform 0.2s ease;
+}
+
+.Vocabulary-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.Vocabulary-btn span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.Vocabulary-btn svg {
+  flex-shrink: 0;
+}
+
+/* Notification Toast */
+.Vocabulary-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999999;
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+  font-weight: 500;
+  animation: Vocabulary-slideIn 0.3s ease;
+}
+
+.Vocabulary-notification-success {
+  border-left: 4px solid #10b981;
+  color: #065f46;
+}
+
+.Vocabulary-notification-error {
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+}
+
+.Vocabulary-notification-warning {
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+}
+
+.Vocabulary-notification-info {
+  border-left: 4px solid #3b82f6;
+  color: #1e40af;
+}
+
+.Vocabulary-notification-hide {
+  animation: Vocabulary-slideOut 0.3s ease;
+}
+
+/* Animations */
+@keyframes Vocabulary-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes Vocabulary-slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes Vocabulary-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes Vocabulary-slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes Vocabulary-slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* Prevent interference with page styles */
+.Vocabulary-popup *,
+.Vocabulary-notification * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}

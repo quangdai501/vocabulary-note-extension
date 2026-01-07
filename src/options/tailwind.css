@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f5f7ff;
+  --color-brand-100: #eef2ff;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+}
+
+html, body, #root { 
+  height: 100%; 
+}
+
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5 { 
+  font-weight: 600; 
+}
+
+.container-max { 
+  max-width: 72rem; 
+  margin-left: auto; 
+  margin-right: auto; 
+  padding-left: 1.5rem; 
+  padding-right: 1.5rem; 
+}

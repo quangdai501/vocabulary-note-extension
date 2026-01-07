@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocabulary Note</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="header-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity="0.6"/>
+          <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Vocabulary Note
+      </h1>
+      <div class="header-actions">
+        <button class="icon-btn settings-btn" id="settingsBtn" title="Open full options">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M8 4v1M8 11v1M6 6h1M11 6h1M6 10h1M11 10h1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="stats" id="stats">
+          <span class="stat">
+            <span class="stat-label">Total:</span>
+            <span class="stat-value" id="totalWords">0</span>
+          </span>
+          <span class="stat stat-highlight">
+            <span class="stat-label">Due:</span>
+            <span class="stat-value" id="dueWords">0</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="review">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        </svg>
+        Today Review
+      </button>
+      <button class="tab" data-tab="vocabulary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        All Vocabulary
+      </button>
+      <button class="tab" data-tab="add">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Add Word
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Today Review Tab -->
+      <div class="tab-panel active" id="review-panel">
+        <div id="reviewContent">
+          <div class="empty-state" id="emptyReview">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+              <path d="M32 20v16l8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p>No words to review today!</p>
+            <small>Great job! Check back tomorrow.</small>
+          </div>
+
+          <div class="review-card" id="reviewCard" style="display: none;">
+            <div class="word-header">
+              <h2 class="word-title" id="reviewWord">Word</h2>
+              <button class="icon-btn" id="playBtn" title="Play pronunciation">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M6 4l10 6-10 6V4z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div class="word-ipa" id="reviewIPA">/wɜːrd/</div>
+            
+            <div class="word-section">
+              <h3>Meaning</h3>
+              <p id="reviewMeaning">Definition goes here</p>
+            </div>
+            
+            <div class="word-section">
+              <h3>Example</h3>
+              <p class="example" id="reviewExample">Example sentence goes here</p>
+            </div>
+            
+            <div class="word-actions">
+              <a href="#" id="youglishLink" target="_blank" class="link-btn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 2H2v12h12V2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M6 6l4 2-4 2V6z" fill="currentColor"/>
+                </svg>
+                Open YouGlish
+              </a>
+            </div>
+
+            <div class="review-buttons">
+              <button class="review-btn review-btn-hard" data-quality="hard">
+                Hard
+                <small id="hardInterval">1d</small>
+              </button>
+              <button class="review-btn review-btn-good" data-quality="good">
+                Good
+                <small id="goodInterval">3d</small>
+              </button>
+              <button class="review-btn review-btn-easy" data-quality="easy">
+                Easy
+                <small id="easyInterval">5d</small>
+              </button>
+            </div>
+
+            <div class="review-progress">
+              <span id="reviewProgress">1 / 5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- All Vocabulary Tab -->
+      <div class="tab-panel" id="vocabulary-panel">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search vocabulary...">
+        </div>
+
+        <div id="vocabularyList">
+          <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <path d="M16 16h32v32H16z" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M24 28h16M24 36h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p>No vocabulary yet</p>
+            <small>Start saving words to build your vocabulary!</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Word Tab -->
+      <div class="tab-panel" id="add-panel">
+        <form id="addWordForm" class="form">
+          <div class="form-group">
+            <label for="wordInput">Word *</label>
+            <input type="text" id="wordInput" placeholder="Enter a word" required>
+          </div>
+
+          <div class="form-group">
+            <label for="meaningInput">Meaning</label>
+            <textarea id="meaningInput" placeholder="Enter meaning (optional)" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="exampleInput">Example</label>
+            <textarea id="exampleInput" placeholder="Enter example sentence (optional)" rows="2"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Add Word
+          </button>
+
+          <button type="button" id="fetchBtn" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M13 8A5 5 0 1 1 8 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <path d="M13 3v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Auto-fetch from Dictionary
+          </button>
+        </form>
+
+        <div class="export-section">
+          <h3>Import / Export</h3>
+          <div class="export-buttons">
+            <button id="exportBtn" class="btn btn-outline">Export JSON</button>
+            <button id="importBtn" class="btn btn-outline">Import JSON</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
