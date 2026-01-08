@@ -49,6 +49,7 @@ const fetchBtn = document.getElementById('fetchBtn');
 const exportBtn = document.getElementById('exportBtn');
 const importBtn = document.getElementById('importBtn');
 const importFile = document.getElementById('importFile');
+const resetProgressBtn = document.getElementById('resetProgressBtn');
 
 // Initialize
 init();
@@ -109,6 +110,9 @@ function setupEventListeners() {
   exportBtn.addEventListener('click', handleExport);
   importBtn.addEventListener('click', () => importFile.click());
   importFile.addEventListener('change', handleImport);
+
+  // Reset Progress
+  resetProgressBtn.addEventListener('click', handleResetProgress);
 }
 
 /**
@@ -275,7 +279,14 @@ function renderVocabularyList() {
                 <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
               </svg>
             </button>
-            <button class="vocab-action-btn" data-action="delete" data-id="${word.id}" title="Delete">
+            <button class="vocab-action-btn" data-action="edit" data-id="${word.id}" title="Edit next review">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M11.5 3.5l1 1L7 12.5l-1-1L11.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 6l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+             <button class="vocab-action-btn" data-action="delete" data-id="${word.id}" title="Delete">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
@@ -303,6 +314,8 @@ function renderVocabularyList() {
         handleVocabCambridge(id);
       } else if (action === 'translate') {
         handleVocabTranslate(id);
+      } else if (action === 'edit') {
+        handleVocabEdit(id);
       } else if (action === 'delete') {
         handleVocabDelete(id);
       }
@@ -368,6 +381,99 @@ function handleVocabTranslate(wordId) {
     const translateUrl = `https://translate.google.com/?hl=vi&sl=en&tl=vi&text=${encodeURIComponent(word.word)}&op=translate`;
     chrome.tabs.create({ url: translateUrl });
   }
+}
+
+/**
+ * Handle edit next review time for vocabulary item
+ */
+async function handleVocabEdit(wordId) {
+  const word = allVocabulary.find(w => w.id === wordId);
+  if (!word) return;
+
+  const currentDays = word.nextReview 
+    ? Math.max(0, Math.ceil((word.nextReview - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  showEditModal(word, currentDays);
+}
+
+/**
+ * Show edit modal
+ */
+function showEditModal(word, currentDays) {
+  // Create modal overlay
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>Edit Next Review Time</h3>
+      <div class="modal-body">
+        <p><strong>Word:</strong> ${word.word}</p>
+        <p><strong>Current next review:</strong> ${word.nextReview 
+          ? new Date(word.nextReview).toLocaleDateString() 
+          : 'Not scheduled'}</p>
+        <div class="form-group">
+          <label>Days from now:</label>
+          <input type="number" id="editDaysInput" min="0" value="${currentDays}" placeholder="Enter number of days">
+          <small>Enter 0 to make it due immediately</small>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelEdit" class="btn btn-secondary">Cancel</button>
+        <button id="saveEdit" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Focus input
+  setTimeout(() => {
+    document.getElementById('editDaysInput').focus();
+    document.getElementById('editDaysInput').select();
+  }, 100);
+
+  // Event listeners
+  document.getElementById('cancelEdit').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+
+  document.getElementById('saveEdit').addEventListener('click', async () => {
+    const daysInput = document.getElementById('editDaysInput');
+    const days = parseInt(daysInput.value);
+    
+    if (isNaN(days) || days < 0) {
+      alert('Please enter a valid number of days (0 or more)');
+      daysInput.focus();
+      return;
+    }
+
+    const newNextReview = days === 0 ? Date.now() : Date.now() + (days * 24 * 60 * 60 * 1000);
+    
+    word.nextReview = newNextReview;
+    word.updatedAt = Date.now();
+    
+    await storageService.updateWord(word);
+    await loadData();
+    renderVocabularyList();
+    
+    document.body.removeChild(modal);
+  });
+
+  // Close on overlay click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', function closeModal(e) {
+    if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', closeModal);
+    }
+  });
 }
 
 /**
@@ -500,6 +606,37 @@ async function handleImport(e) {
   
   // Reset file input
   importFile.value = '';
+}
+
+/**
+ * Handle reset progress
+ */
+async function handleResetProgress() {
+  const confirmed = confirm(
+    '⚠️ WARNING: This will reset ALL SRS progress for every word in your vocabulary!\n\n' +
+    '• All words will be marked as "new" again\n' +
+    '• Review intervals will be reset to 1 day\n' +
+    '• Ease factors will be reset to default\n' +
+    '• This action cannot be undone\n\n' +
+    'Are you sure you want to continue?'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const success = await storageService.resetProgress();
+    
+    if (success) {
+      alert('All SRS progress has been reset successfully!');
+      await loadData();
+      renderVocabularyList();
+      showReviewTab(); // Refresh review tab
+    } else {
+      alert('Failed to reset progress. Please try again.');
+    }
+  } catch (error) {
+    alert('Error resetting progress. Please try again.');
+  }
 }
 
 console.log('Vocabulary Note popup loaded');

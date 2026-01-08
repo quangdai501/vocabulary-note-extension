@@ -93,6 +93,35 @@ class StorageService {
   }
 
   /**
+   * Update a word's data (general update method)
+   * @param {Object} wordData - Word object with updated data (must include id)
+   * @returns {Promise<boolean>} Success status
+   */
+  async updateWord(wordData) {
+    try {
+      const vocabulary = await this.getAllVocabulary();
+      const wordIndex = vocabulary.findIndex(item => item.id === wordData.id);
+
+      if (wordIndex === -1) return false;
+
+      vocabulary[wordIndex] = {
+        ...vocabulary[wordIndex],
+        ...wordData,
+        updatedAt: Date.now()
+      };
+
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.VOCABULARY]: vocabulary
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating word:', error);
+      return false;
+    }
+  }
+
+  /**
    * Delete a word from vocabulary
    * @param {string} wordId - Word ID to delete
    * @returns {Promise<boolean>} Success status
