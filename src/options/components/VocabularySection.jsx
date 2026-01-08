@@ -8,6 +8,7 @@ function VocabularySection({
   filteredVocabulary,
   setFilteredVocabulary,
   onVocabularyUpdate,
+  service,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingWord, setEditingWord] = useState(null);
@@ -76,7 +77,7 @@ function VocabularySection({
     editingWord.nextReview = newNextReview;
     editingWord.updatedAt = Date.now();
 
-    await storageService.updateWord(editingWord);
+    await service.updateWord(editingWord);
     onVocabularyUpdate();
     setEditingWord(null);
     setEditDays("");
@@ -89,7 +90,7 @@ function VocabularySection({
 
   const handleDelete = async (wordId) => {
     if (window.confirm("Are you sure you want to delete this word?")) {
-      await storageService.deleteWord(wordId);
+      await service.deleteWord(wordId);
       onVocabularyUpdate();
     }
   };
@@ -105,7 +106,7 @@ function VocabularySection({
     );
 
     if (confirmed) {
-      const success = await storageService.resetProgress();
+      const success = await service.resetProgress();
       if (success) {
         alert("✅ All SRS progress has been reset successfully!");
         onVocabularyUpdate();

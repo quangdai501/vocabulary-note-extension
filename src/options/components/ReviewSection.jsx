@@ -3,7 +3,7 @@ import storageService from '../../services/storage.js'
 import srsService from '../../services/srs.js'
 import pronunciationService from '../../services/pronunciation.js'
 
-function ReviewSection({ dueWords, currentReviewIndex, setCurrentReviewIndex, onReviewComplete }) {
+function ReviewSection({ dueWords, currentReviewIndex, setCurrentReviewIndex, onReviewComplete, service }) {
   const [currentWord, setCurrentWord] = useState(null)
   const [predictions, setPredictions] = useState({ hard: '1d', good: '3d', easy: '5d' })
   const [showMeaning, setShowMeaning] = useState(false)
@@ -24,7 +24,7 @@ function ReviewSection({ dueWords, currentReviewIndex, setCurrentReviewIndex, on
     const qualityScore = srsService.getQualityScore(quality)
     const updatedSRS = srsService.calculateNextReview(currentWord, qualityScore)
 
-    await storageService.updateWordSRS(currentWord.id, updatedSRS)
+    await service.updateWordSRS(currentWord.id, updatedSRS)
 
     const nextIndex = currentReviewIndex + 1
     setCurrentReviewIndex(nextIndex)

@@ -7,11 +7,21 @@
     "storage",
     "alarms",
     "notifications",
-    "contextMenus"
+    "contextMenus",
+    "identity"
   ],
-  "host_permissions": [
-    "https://api.dictionaryapi.dev/*"
-  ],
+  "oauth2": {
+    "client_id": "914743670982-k88aklofjkjs65utob2s9ctf9j0895a0.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "email",
+      "profile"
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "host_permissions": ["https://api.dictionaryapi.dev/*"],
   "background": {
     "service_worker": "src/background/background.js"
   },

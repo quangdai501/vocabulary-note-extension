@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import storageService from '../../services/storage.js'
 
-function SettingsSection({ onVocabularyUpdate }) {
+function SettingsSection({ onVocabularyUpdate, service }) {
   const [settings, setSettings] = useState({
     autoPlay: false,
     showIPA: true,
@@ -17,7 +17,7 @@ function SettingsSection({ onVocabularyUpdate }) {
 
   const loadSettings = async () => {
     try {
-      const savedSettings = await storageService.getSettings()
+      const savedSettings = await service.getSettings()
       setSettings({ ...settings, ...savedSettings })
     } catch (err) {
       console.error('Failed to load settings:', err)
@@ -33,7 +33,7 @@ function SettingsSection({ onVocabularyUpdate }) {
     setMessage('')
 
     try {
-      await storageService.saveSettings(settings)
+      await service.saveSettings(settings)
       setMessage('Settings saved successfully!')
       setTimeout(() => setMessage(''), 3000)
     } catch (err) {
@@ -46,7 +46,7 @@ function SettingsSection({ onVocabularyUpdate }) {
 
   const handleExport = async () => {
     try {
-      const vocabulary = await storageService.getAllWords()
+      const vocabulary = await service.getAllVocabulary()
       const dataStr = JSON.stringify(vocabulary, null, 2)
       const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
 
@@ -71,7 +71,7 @@ function SettingsSection({ onVocabularyUpdate }) {
       try {
         const importedData = JSON.parse(e.target.result)
         if (Array.isArray(importedData)) {
-          await storageService.importWords(importedData)
+          await service.importVocabulary(importedData)
           onVocabularyUpdate()
           setMessage('Vocabulary imported successfully!')
           setTimeout(() => setMessage(''), 3000)

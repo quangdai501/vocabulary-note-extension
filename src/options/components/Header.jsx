@@ -1,6 +1,6 @@
 import React from 'react'
 
-function Header({ totalWords, dueWords }) {
+function Header({ totalWords, dueWords, user, onLogout }) {
   return (
     <header className="sticky top-0 z-10 bg-white/70 backdrop-blur shadow-sm">
       <div className="container-max flex items-center justify-between py-4">
@@ -13,6 +13,15 @@ function Header({ totalWords, dueWords }) {
         </h1>
 
         <div className="flex items-center gap-4">
+          {user && (
+            <button
+              onClick={onLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Logout
+            </button>
+          )}
+
           <div className="bg-white/90 px-4 py-2 rounded-lg shadow-sm border border-white/60 text-center">
             <div className="text-xl font-extrabold text-brand-600">{totalWords}</div>
             <div className="text-xs text-slate-500 uppercase">Total</div>

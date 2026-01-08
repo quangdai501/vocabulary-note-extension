@@ -1,7 +1,4 @@
-/**
- * Pronunciation Service
- * Handles audio playback using either provided URL or Web Speech API fallback
- */
+import { API } from '../utils/constants.js';
 class PronunciationService {
   constructor() {
     this.currentAudio = null;
@@ -109,6 +106,55 @@ class PronunciationService {
   }
 
   /**
+   * Get pronunciation data for a word
+   * @param {string} word - Word to get pronunciation for
+   * @returns {Promise<Object>} Pronunciation data {ipa, audioUrl, youglishLink}
+   */
+  async getPronunciation(word) {
+    try {
+      const response = await fetch(`${API.DICTIONARY}${encodeURIComponent(word)}`);
+      
+      if (!response.ok) {
+        return { ipa: '', audioUrl: '', youglishLink: '' };
+      }
+
+      const data = await response.json();
+      
+      if (!data || data.length === 0) {
+        return { ipa: '', audioUrl: '', youglishLink: '' };
+      }
+
+      const firstEntry = data[0];
+      const phonetics = firstEntry.phonetics || [];
+
+      // Extract IPA
+      let ipa = '';
+      for (const phonetic of phonetics) {
+        if (phonetic.text && phonetic.text.includes('/')) {
+          ipa = phonetic.text;
+          break;
+        }
+      }
+
+      // Extract audio URL
+      let audioUrl = '';
+      for (const phonetic of phonetics) {
+        if (phonetic.audio && phonetic.audio.trim() !== '') {
+          audioUrl = phonetic.audio;
+          break;
+        }
+      }
+
+      // YouGlish link
+      const youglishLink = `https://youglish.com/pronounce/${encodeURIComponent(word)}/english`;
+
+      return { ipa, audioUrl, youglishLink };
+    } catch (error) {
+      console.error('Pronunciation fetch error:', error);
+      return { ipa: '', audioUrl: '', youglishLink: '' };
+    }
+  }
+  /**
    * Check if audio URL is valid
    * @param {string} url - Audio URL to validate
    * @returns {Promise<boolean>} Validity status
@@ -124,5 +170,7 @@ class PronunciationService {
     }
   }
 }
+
+
 
 export default new PronunciationService();

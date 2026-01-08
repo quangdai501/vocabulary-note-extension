@@ -3,7 +3,7 @@ import storageService from '../../services/storage.js'
 import dictionaryService from '../../services/dictionary.js'
 import pronunciationService from '../../services/pronunciation.js'
 
-function AddWordSection({ onVocabularyUpdate }) {
+function AddWordSection({ onVocabularyUpdate, service }) {
   const [word, setWord] = useState('')
   const [meaning, setMeaning] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -63,7 +63,7 @@ function AddWordSection({ onVocabularyUpdate }) {
         repetitions: 0
       }
 
-      await storageService.saveWord(wordData)
+      await service.saveWord(wordData)
       onVocabularyUpdate()
 
       // Reset form
