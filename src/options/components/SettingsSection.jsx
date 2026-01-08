@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import storageService from '../../../services/storage.js'
+import storageService from '../../services/storage.js'
 
 function SettingsSection({ onVocabularyUpdate }) {
   const [settings, setSettings] = useState({

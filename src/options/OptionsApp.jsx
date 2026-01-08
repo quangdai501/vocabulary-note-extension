@@ -5,8 +5,8 @@ import ReviewSection from './components/ReviewSection.jsx'
 import VocabularySection from './components/VocabularySection.jsx'
 import AddWordSection from './components/AddWordSection.jsx'
 import SettingsSection from './components/SettingsSection.jsx'
-import storageService from '../../services/storage.js'
-import srsService from '../../services/srs.js'
+import storageService from '../services/storage.js'
+import srsService from '../services/srs.js'
 
 function OptionsApp() {
   const [currentSection, setCurrentSection] = useState('review')

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import storageService from '../../../services/storage.js'
-import srsService from '../../../services/srs.js'
-import pronunciationService from '../../../services/pronunciation.js'
+import storageService from '../../services/storage.js'
+import srsService from '../../services/srs.js'
+import pronunciationService from '../../services/pronunciation.js'
 
 function VocabularySection({ vocabulary, filteredVocabulary, setFilteredVocabulary, onVocabularyUpdate }) {
   const [searchQuery, setSearchQuery] = useState('')

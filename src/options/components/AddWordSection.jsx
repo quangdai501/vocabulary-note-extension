@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import storageService from '../../../services/storage.js'
-import dictionaryService from '../../../services/dictionary.js'
-import pronunciationService from '../../../services/pronunciation.js'
+import storageService from '../../services/storage.js'
+import dictionaryService from '../../services/dictionary.js'
+import pronunciationService from '../../services/pronunciation.js'
 
 function AddWordSection({ onVocabularyUpdate }) {
   const [word, setWord] = useState('')
