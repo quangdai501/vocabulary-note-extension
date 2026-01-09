@@ -304,3 +304,4 @@ For issues, questions, or suggestions:
 ---
 
 **Built with ❤️ for language learners**
+`npx vite build --config vite.content.config.js`
