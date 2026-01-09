@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import storageService from "../../services/storage.js";
 import srsService from "../../services/srs.js";
 import pronunciationService from "../../services/pronunciation.js";
+import { useAlert } from "./AlertContext.jsx";
 
 function VocabularySection({
   vocabulary,
@@ -10,6 +11,7 @@ function VocabularySection({
   onVocabularyUpdate,
   service,
 }) {
+  const { showAlert, showConfirm } = useAlert();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingWord, setEditingWord] = useState(null);
   const [editDays, setEditDays] = useState("");
@@ -67,7 +69,7 @@ function VocabularySection({
 
     const days = parseInt(editDays);
     if (isNaN(days) || days < 0) {
-      alert("Please enter a valid number of days (0 or more)");
+      showAlert("Please enter a valid number of days (0 or more)", { type: "warning" });
       return;
     }
 
@@ -89,29 +91,33 @@ function VocabularySection({
   };
 
   const handleDelete = async (wordId) => {
-    if (window.confirm("Are you sure you want to delete this word?")) {
+    const confirmed = await showConfirm("Are you sure you want to delete this word?", {
+      title: "Delete Word"
+    });
+    if (confirmed) {
       await service.deleteWord(wordId);
       onVocabularyUpdate();
     }
   };
 
   const handleResetProgress = async () => {
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       "⚠️ WARNING: This will reset ALL SRS progress for every word!\n\n" +
         "• All ease factors will be reset to 2.5\n" +
         "• All intervals will be reset to 1 day\n" +
         "• All repetition counts will be reset to 0\n" +
         "• Next review dates will be cleared\n\n" +
-        "This action cannot be undone. Are you sure you want to continue?"
+        "This action cannot be undone. Are you sure you want to continue?",
+      { title: "Reset All SRS Progress" }
     );
 
     if (confirmed) {
       const success = await service.resetProgress();
       if (success) {
-        alert("✅ All SRS progress has been reset successfully!");
+        showAlert("All SRS progress has been reset successfully!", { type: "success" });
         onVocabularyUpdate();
       } else {
-        alert("❌ Failed to reset progress. Please try again.");
+        showAlert("Failed to reset progress. Please try again.", { type: "error" });
       }
     }
   };

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import storageService from '../../services/storage.js'
+import { useAlert } from './AlertContext.jsx'
 
 function SettingsSection({ onVocabularyUpdate, service }) {
+  const { showConfirm } = useAlert();
   const [settings, setSettings] = useState({
     autoPlay: false,
     showIPA: true,
@@ -87,7 +89,10 @@ function SettingsSection({ onVocabularyUpdate, service }) {
   }
 
   const handleClearAll = async () => {
-    if (window.confirm('Are you sure you want to delete ALL vocabulary? This action cannot be undone.')) {
+    const confirmed = await showConfirm('Are you sure you want to delete ALL vocabulary? This action cannot be undone.', {
+      title: 'Delete All Vocabulary'
+    });
+    if (confirmed) {
       try {
         await storageService.clearAllWords()
         onVocabularyUpdate()

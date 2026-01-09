@@ -5,12 +5,22 @@ import ReviewSection from "./components/ReviewSection.jsx";
 import VocabularySection from "./components/VocabularySection.jsx";
 import AddWordSection from "./components/AddWordSection.jsx";
 import SettingsSection from "./components/SettingsSection.jsx";
+import { AlertProvider, useAlert } from "./components/AlertContext.jsx";
 import storageService from "../services/storage.js";
 import srsService from "../services/srs.js";
 import firebaseStorage from "../services/firebaseStorage.js";
 import { auth } from "../services/firebase.js";
 
 function OptionsApp() {
+  return (
+    <AlertProvider>
+      <OptionsAppContent />
+    </AlertProvider>
+  );
+}
+
+function OptionsAppContent() {
+  const { showAlert } = useAlert();
   const [currentSection, setCurrentSection] = useState("review");
   const [vocabulary, setVocabulary] = useState([]);
   const [dueWords, setDueWords] = useState([]);
@@ -81,7 +91,7 @@ function OptionsApp() {
     try {
       await firebaseStorage.authenticate();
     } catch (error) {
-      alert("Login failed: " + error.message);
+      showAlert("Login failed: " + error.message, { type: "error" });
     }
   };
 
