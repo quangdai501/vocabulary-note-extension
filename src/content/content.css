@@ -282,8 +282,52 @@
   }
 }
 
+/* Trigger icon shown on text selection */
+.Vocabulary-icon-trigger {
+  pointer-events: auto;
+}
+
+.Vocabulary-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.55), 0 1px 3px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: Vocabulary-icon-pop-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  outline: none;
+}
+
+.Vocabulary-icon-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.65), 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.Vocabulary-icon-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 4px rgba(102, 126, 234, 0.4);
+}
+
+.Vocabulary-icon-btn svg {
+  display: block;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+@keyframes Vocabulary-icon-pop-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 /* Prevent interference with page styles */
 .Vocabulary-popup *,
-.Vocabulary-notification * {
+.Vocabulary-notification *,
+.Vocabulary-icon-trigger * {
   box-sizing: border-box;
 }

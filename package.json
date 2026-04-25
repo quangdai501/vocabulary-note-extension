@@ -7,7 +7,16 @@
     "build": "npm run build:ui & npm run build:content & wait",
     "build:ui": "vite build",
     "build:content": "vite build --config vite.content.config.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mobile:install": "npm --prefix mobile install",
+    "mobile:start": "npm --prefix mobile run start",
+    "mobile:android": "npm --prefix mobile run android",
+    "mobile:ios": "npm --prefix mobile run ios",
+    "shared-core:test": "npm --prefix packages/shared-core run test",
+    "functions:install": "npm --prefix functions install",
+    "functions:build": "npm --prefix functions run build",
+    "emulators:start": "firebase emulators:start --only firestore,functions",
+    "verify:word-trigger": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node scripts/verify-word-trigger.js"
   },
   "dependencies": {
     "firebase": "^12.7.0",

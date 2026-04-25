@@ -4,11 +4,9 @@ import {
   collection,
   doc,
   getDocs,
-  addDoc,
   updateDoc,
   deleteDoc,
   query,
-  where,
   setDoc,
   getDoc,
 } from "firebase/firestore";
@@ -173,7 +171,7 @@ class FirebaseStorageService {
     this._checkFirebase();
     try {
       const q = query(
-        collection(db, "users", auth.currentUser.uid, "vocabulary")
+        collection(db, "users", auth.currentUser.uid, "words")
       );
       const snapshot = await getDocs(q);
       return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
@@ -205,16 +203,14 @@ class FirebaseStorageService {
         storageService.notifyVocabularyChange();
         return true;
       } else {
-        // Add new word
-        await addDoc(
-          collection(db, "users", auth.currentUser.uid, "vocabulary"),
-          {
-            ...wordData,
-            id: this.generateId(),
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          }
-        );
+        const wordId = wordData.id || this.generateId();
+        await setDoc(doc(db, "users", auth.currentUser.uid, "words", wordId), {
+          ...wordData,
+          id: wordId,
+          source: wordData.source || "extension",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
         storageService.notifyVocabularyChange();
         return true;
       }
@@ -232,11 +228,12 @@ class FirebaseStorageService {
         db,
         "users",
         auth.currentUser.uid,
-        "vocabulary",
+        "words",
         wordData.id
       );
       await updateDoc(docRef, {
         ...wordData,
+        source: wordData.source || "extension",
         updatedAt: Date.now(),
       });
       storageService.notifyVocabularyChange();
@@ -255,7 +252,7 @@ class FirebaseStorageService {
         db,
         "users",
         auth.currentUser.uid,
-        "vocabulary",
+        "words",
         wordId
       );
       await updateDoc(docRef, {
@@ -276,7 +273,7 @@ class FirebaseStorageService {
     this._checkFirebase();
     try {
       await deleteDoc(
-        doc(db, "users", auth.currentUser.uid, "vocabulary", wordId)
+        doc(db, "users", auth.currentUser.uid, "words", wordId)
       );
       storageService.notifyVocabularyChange();
       return true;
@@ -316,11 +313,14 @@ class FirebaseStorageService {
       const vocabulary = JSON.parse(jsonData);
       const batch = [];
       for (const word of vocabulary) {
+        const wordId = word.id || this.generateId();
         batch.push(
-          addDoc(
-            collection(db, "users", auth.currentUser.uid, "vocabulary"),
-            word
-          )
+          setDoc(doc(db, "users", auth.currentUser.uid, "words", wordId), {
+            ...word,
+            id: wordId,
+            source: word.source || "extension",
+            updatedAt: Date.now(),
+          })
         );
       }
       await Promise.all(batch);
@@ -422,7 +422,7 @@ class FirebaseStorageService {
       const vocabulary = await this.getAllVocabulary();
       await Promise.all(
         vocabulary.map(word =>
-          deleteDoc(doc(db, "users", auth.currentUser.uid, "vocabulary", word.id))
+          deleteDoc(doc(db, "users", auth.currentUser.uid, "words", word.id))
         )
       );
       storageService.notifyVocabularyChange();
@@ -464,7 +464,7 @@ class FirebaseStorageService {
           db,
           "users",
           auth.currentUser.uid,
-          "vocabulary",
+          "words",
           word.id
         );
         batch.push(updateDoc(docRef, word));

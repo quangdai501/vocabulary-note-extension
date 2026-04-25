@@ -7,3 +7,7 @@ build
 
 # Firebase cache
 .firebase
+mobile/*
+functions/*
+tests/*
+packages/*
