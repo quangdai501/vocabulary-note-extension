@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "./components/Header.jsx";
 import Navigation from "./components/Navigation.jsx";
 import ReviewSection from "./components/ReviewSection.jsx";
@@ -7,7 +7,6 @@ import AddWordSection from "./components/AddWordSection.jsx";
 import SettingsSection from "./components/SettingsSection.jsx";
 import { AlertProvider, useAlert } from "./components/AlertContext.jsx";
 import storageService from "../services/storage.js";
-import srsService from "../services/srs.js";
 import firebaseStorage from "../services/firebaseStorage.js";
 import { auth } from "../services/firebase.js";
 
@@ -28,75 +27,111 @@ function OptionsAppContent() {
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   const [settings, setSettings] = useState({});
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginError, setLoginError] = useState(null);
+  const authInitialized = useRef(false);
 
   useEffect(() => {
-    loadData();
-    loadSettings();
-  }, []);
-
-  useEffect(() => {
-    if (!auth) return;
+    if (!auth || typeof auth.onAuthStateChanged !== 'function') {
+      setAuthLoading(false);
+      return;
+    }
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
+      // Mirror auth state so the popup can react even if Firebase cross-tab sync is delayed
+      chrome.storage.local.set({ isLoggedIn: !!currentUser });
+      if (!authInitialized.current) {
+        authInitialized.current = true;
+        setAuthLoading(false);
+      }
       if (currentUser) {
-       
-        // Sync vocabulary
-        const firebaseVocab = await firebaseStorage.getAllVocabulary();
-        if (firebaseVocab.length === 0) {
-          const localVocab = await storageService.getAllVocabulary();
-          for (const word of localVocab) {
-            await firebaseStorage.saveWord(word);
-          }
-        }
-        // Sync settings
-        const firebaseSettings = await firebaseStorage.getSettings();
-        if (Object.keys(firebaseSettings).length === 0) {
-          const localSettings = await storageService.getSettings();
-          await firebaseStorage.saveSettings(localSettings);
-        }
-        loadData();
-        loadSettings();
-      } else {
-        loadData();
-        loadSettings();
+        await runOneTimeMigration();
+        loadData(firebaseStorage);
+        loadSettings(firebaseStorage);
       }
     });
     return unsubscribe;
   }, []);
 
-  const service = user ? firebaseStorage : storageService;
+  // Reload when another context mutates vocabulary or queues a new pending word
+  useEffect(() => {
+    const handleStorageChange = (changes) => {
+      if ((changes.vocabularyUpdatedAt || changes.pendingWords) && user) {
+        loadData(firebaseStorage);
+      }
+    };
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+  }, [user]);
 
-  const loadData = async () => {
-    const vocab = await service.getAllVocabulary();
-    const due = await service.getDueWords();
+  /**
+   * One-time migration: push any legacy chrome.storage.local vocabulary
+   * into Firestore on first sign-in, then clear it locally.
+   */
+  const runOneTimeMigration = async () => {
+    try {
+      const legacyVocab = await storageService.getAndClearLegacyVocabulary();
+      if (!legacyVocab || legacyVocab.length === 0) return;
+
+      const existingFirebaseVocab = await firebaseStorage.getAllVocabulary();
+      if (existingFirebaseVocab.length > 0) return; // cloud already has data, skip
+
+      showAlert(`Migrating ${legacyVocab.length} local word${legacyVocab.length > 1 ? 's' : ''} to your account…`, { type: 'info' });
+      for (const word of legacyVocab) {
+        await firebaseStorage.saveWord(word);
+      }
+      showAlert('Local vocabulary migrated to your account!', { type: 'success' });
+    } catch (error) {
+      console.error('Migration error:', error);
+      // Non-fatal — the user can still use the app
+    }
+  };
+
+  const processPendingWords = async () => {
+    const pending = await storageService.claimPendingWords();
+    for (const word of pending) {
+      try {
+        await firebaseStorage.saveWord(word);
+      } catch (e) {
+        console.error('Failed to sync pending word:', word.word, e);
+      }
+    }
+  };
+
+  const loadData = async (svc) => {
+    await processPendingWords();
+    const activeService = svc ?? firebaseStorage;
+    const vocab = await activeService.getAllVocabulary();
+    const due = await activeService.getDueWords();
     setVocabulary(vocab);
     setDueWords(due);
     setFilteredVocabulary(vocab);
+    // Keep background script's notification cache in sync
+    storageService.setNotificationCache(due.length);
   };
 
-  const loadSettings = async () => {
-    const userSettings = await service.getSettings();
+  const loadSettings = async (svc) => {
+    const activeService = svc ?? firebaseStorage;
+    const userSettings = await activeService.getSettings();
     setSettings(userSettings);
   };
 
   const handleLogout = async () => {
     try {
-      await auth.signOut();
+      await firebaseStorage.signOut();
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
   const handleLogin = async () => {
+    setLoginError(null);
     try {
       await firebaseStorage.authenticate();
+      // onAuthStateChanged fires and triggers data load
     } catch (error) {
-      showAlert("Login failed: " + error.message, { type: "error" });
+      setLoginError(error.message);
     }
-  };
-
-  const updateStats = () => {
-    // Stats are calculated from vocabulary and dueWords state
   };
 
   const renderCurrentSection = () => {
@@ -108,7 +143,7 @@ function OptionsAppContent() {
             currentReviewIndex={currentReviewIndex}
             setCurrentReviewIndex={setCurrentReviewIndex}
             onReviewComplete={loadData}
-            service={service}
+            service={firebaseStorage}
           />
         );
       case "vocabulary":
@@ -118,7 +153,7 @@ function OptionsAppContent() {
             filteredVocabulary={filteredVocabulary}
             setFilteredVocabulary={setFilteredVocabulary}
             onVocabularyUpdate={loadData}
-            service={service}
+            service={firebaseStorage}
           />
         );
       case "add":
@@ -126,7 +161,7 @@ function OptionsAppContent() {
           <AddWordSection
             vocabulary={vocabulary}
             onWordAdded={loadData}
-            service={service}
+            service={firebaseStorage}
           />
         );
       case "settings":
@@ -135,7 +170,8 @@ function OptionsAppContent() {
             settings={settings}
             setSettings={setSettings}
             onSettingsSaved={loadSettings}
-            service={service}
+            onVocabularyUpdate={loadData}
+            service={firebaseStorage}
           />
         );
       default:
@@ -143,41 +179,55 @@ function OptionsAppContent() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-sm w-full">
+          <div className="mb-4">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mx-auto text-indigo-500">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity="0.6"/>
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Vocabulary Note</h1>
+          <p className="text-gray-600 mb-6">
+            Sign in to sync your vocabulary across devices
+          </p>
+          <button
+            onClick={handleLogin}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+          >
+            Sign in with Google
+          </button>
+          {loginError && (
+            <p className="mt-4 text-sm text-red-600">{loginError}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {!user ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="bg-white p-8 rounded-lg shadow-md text-center">
-            <h1 className="text-2xl font-bold mb-4">Vocabulary Note</h1>
-            <p className="text-gray-600 mb-6">
-              Sign in to sync your vocabulary across devices
-            </p>
-            <button
-              onClick={handleLogin}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium"
-            >
-              Sign in with Google
-            </button>
-            <p className="text-sm text-gray-500 mt-4">
-              You can still use the extension locally without signing in
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <Header
-            totalWords={vocabulary.length}
-            dueWords={dueWords.length}
-            user={user}
-            onLogout={handleLogout}
-          />
-          <Navigation
-            currentSection={currentSection}
-            setCurrentSection={setCurrentSection}
-          />
-          <main>{renderCurrentSection()}</main>
-        </>
-      )}
+      <Header
+        totalWords={vocabulary.length}
+        dueWords={dueWords.length}
+        user={user}
+        onLogout={handleLogout}
+      />
+      <Navigation
+        currentSection={currentSection}
+        setCurrentSection={setCurrentSection}
+      />
+      <main>{renderCurrentSection()}</main>
     </div>
   );
 }

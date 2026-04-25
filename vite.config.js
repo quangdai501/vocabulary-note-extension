@@ -12,6 +12,14 @@ export default defineConfig({
         options: "src/options/main.jsx",
         popup: "src/popup/mainPopup.jsx",
       },
+      output: {
+        entryFileNames: "[name].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith(".css")) return "[name].css";
+          return "assets/[name]-[hash][extname]";
+        },
+      },
     },
   },
 });

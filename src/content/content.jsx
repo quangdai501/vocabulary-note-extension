@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import storageService from '../services/storage.js';
 import './content.css';
 
 console.log('🔵 Vocabulary Note: Content script loading...');
@@ -313,59 +314,37 @@ async function fetchTranslation(word) {
 }
 
 /**
- * Save word to vocabulary
+ * Save word to vocabulary.
+ * Content scripts cannot authenticate Firebase (wrong IndexedDB origin), so
+ * words are queued in chrome.storage.local and flushed by the popup/options
+ * page the next time they are open (or immediately if already open).
  */
 async function saveWord(word) {
   console.log('saveWord function called with:', word);
   try {
-    // Show loading state
-    showNotification('Loading...', 'info');
+    // Read auth state from storage — set by the popup/options onAuthStateChanged
+    const { isLoggedIn } = await chrome.storage.local.get('isLoggedIn');
+    if (!isLoggedIn) {
+      showNotification('Sign in to save words', 'warning');
+      return;
+    }
 
-    // Fetch word data from dictionary API
+    showNotification('Saving...', 'info');
+
     const response = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
     );
 
-    let wordData;
+    const wordData = response.ok
+      ? parseWordData(await response.json(), word)
+      : createManualWordData(word);
 
-    if (response.ok) {
-      const apiData = await response.json();
-      wordData = parseWordData(apiData, word);
-    } else {
-      // Create manual entry if API fails
-      wordData = createManualWordData(word);
-    }
+    await storageService.addPendingWord(wordData);
 
-    // Save to storage
-    const result = await chrome.storage.local.get('vocabulary');
-    const vocabulary = result.vocabulary || [];
-
-    // Check if word already exists
-    const existingIndex = vocabulary.findIndex(
-      item => item.word.toLowerCase() === word.toLowerCase()
-    );
-
-    if (existingIndex !== -1) {
-      showNotification('Word already exists!', 'warning');
-      removePopup();
-      return;
-    }
-
-    // Add new word
-    vocabulary.push({
-      ...wordData,
-      id: generateId(),
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    });
-
-    await chrome.storage.local.set({ vocabulary });
-
-    showNotification(`"${word}" saved successfully!`, 'success');
+    showNotification(`"${word}" saved!`, 'success');
     removePopup();
   } catch (error) {
     console.error('Error saving word:', error);
-    console.error('Error details:', error.message, error.stack);
     showNotification('Failed to save word: ' + error.message, 'error');
   }
 }
@@ -543,13 +522,6 @@ function showNotification(message, type = 'info') {
     notification.classList.add('Vocabulary-notification-hide');
     setTimeout(() => notification.remove(), 300);
   }, 3000);
-}
-
-/**
- * Generate unique ID
- */
-function generateId() {
-  return `word_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 console.log('Vocabulary Note content script loaded');

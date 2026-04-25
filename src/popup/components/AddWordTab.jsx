@@ -1,9 +1,8 @@
 import React from "react";
-import storageService from "../../services/storage.js";
 import dictionaryService from "../../services/dictionary.js";
 import { useAlert } from "./AlertContext.jsx";
 
-function AddWordTab({ allVocabulary, onVocabularyChange, onResetProgress }) {
+function AddWordTab({ allVocabulary, onVocabularyChange, onResetProgress, service }) {
   const { showAlert } = useAlert();
   const [wordInput, setWordInput] = React.useState("");
   const [meaningInput, setMeaningInput] = React.useState("");
@@ -33,7 +32,7 @@ function AddWordTab({ allVocabulary, onVocabularyChange, onResetProgress }) {
       if (meaningInput.trim()) wordData.meaning = meaningInput;
       if (exampleInput.trim()) wordData.examples = [exampleInput];
 
-      const success = await storageService.saveWord(wordData);
+      const success = await service.saveWord(wordData);
       if (!success) {
         showAlert("Failed to save word!", { type: "error" });
         return;
@@ -46,12 +45,6 @@ function AddWordTab({ allVocabulary, onVocabularyChange, onResetProgress }) {
       setMeaningInput("");
       setExampleInput("");
       showAlert(`"${wordInput}" added successfully!`, { type: "success" });
-
-      // Reset form
-      setWordInput("");
-      setMeaningInput("");
-      setExampleInput("");
-      alert(`"${wordInput}" added successfully!`);
     } catch (error) {
       console.error("Error adding word:", error);
       showAlert("Failed to add word: " + error.message, { type: "error" });
@@ -76,7 +69,7 @@ function AddWordTab({ allVocabulary, onVocabularyChange, onResetProgress }) {
 
   const handleExport = async () => {
     try {
-      const dataStr = await storageService.exportVocabulary();
+      const dataStr = await service.exportVocabulary();
       const dataUri =
         "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
 
@@ -98,7 +91,7 @@ function AddWordTab({ allVocabulary, onVocabularyChange, onResetProgress }) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const success = await storageService.importVocabulary(e.target.result);
+        const success = await service.importVocabulary(e.target.result);
         if (!success) {
           throw new Error("Failed to import vocabulary");
         }

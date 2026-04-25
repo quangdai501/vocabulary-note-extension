@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import storageService from "../../services/storage.js";
 import { useAlert } from "./AlertContext.jsx";
 
-function EditReviewModal({ isOpen, word, onClose, onUpdate }) {
+function EditReviewModal({ isOpen, word, onClose, onUpdate, service }) {
   const { showAlert } = useAlert();
   const [daysInput, setDaysInput] = useState("");
   const [error, setError] = useState("");
@@ -39,7 +38,7 @@ function EditReviewModal({ isOpen, word, onClose, onUpdate }) {
     }
 
     try {
-      const updateResult = await storageService.updateWord({
+      const updateResult = await service.updateWord({
         ...word,
         nextReview: newNextReview,
         updatedAt: Date.now()
@@ -49,7 +48,7 @@ function EditReviewModal({ isOpen, word, onClose, onUpdate }) {
         throw new Error('Failed to update word in storage');
       }
 
-      alert('Next review time updated successfully!');
+      showAlert('Next review time updated successfully!', { type: 'success' });
       onUpdate();
       onClose();
     } catch (error) {

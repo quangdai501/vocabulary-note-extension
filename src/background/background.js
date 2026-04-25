@@ -10,9 +10,7 @@ const ALARMS = {
 };
 
 const STORAGE_KEYS = {
-  VOCABULARY: 'vocabulary',
-  SETTINGS: 'settings',
-  STATS: 'stats'
+  SETTINGS: 'settings'
 };
 
 // Initialize extension on install
@@ -122,23 +120,18 @@ async function setupDailyAlarm() {
 }
 
 /**
- * Check for due words and show notification
+ * Check for due words and show notification.
+ * Reads the pre-computed notificationCache written by the popup/options page
+ * after each data load, since the background script cannot access Firestore directly.
  */
 async function checkAndNotifyDueWords() {
   try {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.VOCABULARY);
-    const vocabulary = result[STORAGE_KEYS.VOCABULARY] || [];
-    
-    const now = Date.now();
-    const dueWords = vocabulary.filter(word => {
-      return !word.nextReview || word.nextReview <= now;
-    });
-    
-    const dueCount = dueWords.length;
-    
+    const result = await chrome.storage.local.get(['notificationCache', STORAGE_KEYS.SETTINGS]);
+    const dueCount = result.notificationCache?.dueCount ?? 0;
+
     if (dueCount > 0) {
-      const settings = await getSettings();
-      
+      const settings = result[STORAGE_KEYS.SETTINGS] || {};
+
       if (settings.showNotifications !== false) {
         await chrome.notifications.create({
           type: 'basic',
@@ -152,7 +145,7 @@ async function checkAndNotifyDueWords() {
         });
       }
     }
-    
+
     return dueCount;
   } catch (error) {
     console.error('Error checking due words:', error);
@@ -190,8 +183,8 @@ function createContextMenu() {
  */
 async function initializeStorage() {
   try {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.VOCABULARY]);
-    
+    const result = await chrome.storage.local.get(STORAGE_KEYS.SETTINGS);
+
     if (!result[STORAGE_KEYS.SETTINGS]) {
       await chrome.storage.local.set({
         [STORAGE_KEYS.SETTINGS]: {
@@ -199,12 +192,6 @@ async function initializeStorage() {
           autoPlayPronunciation: false,
           showNotifications: true
         }
-      });
-    }
-    
-    if (!result[STORAGE_KEYS.VOCABULARY]) {
-      await chrome.storage.local.set({
-        [STORAGE_KEYS.VOCABULARY]: []
       });
     }
   } catch (error) {

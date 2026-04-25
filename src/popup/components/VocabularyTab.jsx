@@ -1,5 +1,4 @@
 import React from "react";
-import storageService from "../../services/storage.js";
 import pronunciationService from "../../services/pronunciation.js";
 import SearchInput from "./SearchInput.jsx";
 import EmptyState from "./EmptyState.jsx";
@@ -14,6 +13,7 @@ function VocabularyTab({
   onEditNextReview,
   onResetProgress,
   onVocabularyChange,
+  service,
 }) {
   const { showAlert } = useAlert();
   const hasVocabulary = allVocabulary.length > 0;
@@ -25,7 +25,7 @@ function VocabularyTab({
 
   const handleDeleteWord = async (wordId) => {
     try {
-      await storageService.deleteWord(wordId);
+      await service.deleteWord(wordId);
       onVocabularyChange();
       showAlert('Word deleted successfully!', { type: 'success' });
     } catch (error) {

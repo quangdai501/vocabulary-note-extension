@@ -1,12 +1,12 @@
 import React from "react";
 import srsService from "../../services/srs.js";
-import storageService from "../../services/storage.js";
 import pronunciationService from "../../services/pronunciation.js";
 
 function ReviewTab({
   currentReviewWords,
   currentReviewIndex,
   onReviewComplete,
+  service,
 }) {
   const currentReviewWord = currentReviewWords[currentReviewIndex];
   const predictedIntervals = currentReviewWord
@@ -18,7 +18,7 @@ function ReviewTab({
     const qualityScore = srsService.getQualityScore(quality);
     const nextReview = srsService.calculateNextReview(currentWord, qualityScore);
 
-    await storageService.updateWordSRS(currentWord.id, nextReview);
+    await service.updateWordSRS(currentWord.id, nextReview);
 
     onReviewComplete();
   };

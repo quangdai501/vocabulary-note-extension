@@ -11,7 +11,7 @@
     "identity"
   ],
   "oauth2": {
-    "client_id": "914743670982-k88aklofjkjs65utob2s9ctf9j0895a0.apps.googleusercontent.com",
+    "client_id": "1078447766262-fi9it9vo42r4g908vtdf935n1u5aashk.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
   },
   "content_security_policy": {

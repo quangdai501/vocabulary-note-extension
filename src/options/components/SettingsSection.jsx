@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import storageService from '../../services/storage.js'
 import { useAlert } from './AlertContext.jsx'
 
 function SettingsSection({ onVocabularyUpdate, service }) {
@@ -94,7 +93,7 @@ function SettingsSection({ onVocabularyUpdate, service }) {
     });
     if (confirmed) {
       try {
-        await storageService.clearAllWords()
+        await service.clearAllVocabulary()
         onVocabularyUpdate()
         setMessage('All vocabulary cleared.')
         setTimeout(() => setMessage(''), 3000)

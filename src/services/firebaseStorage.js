@@ -1,4 +1,5 @@
 import { db, auth } from "./firebase.js";
+import storageService from "./storage.js";
 import {
   collection,
   doc,
@@ -14,17 +15,40 @@ import {
 import { signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 
 class FirebaseStorageService {
-  _checkFirebase() {
-    if (!db || !auth) throw new Error("Firebase not initialized");
+  _isFirebaseAudienceMismatchError(err) {
+    return (
+      err?.code === "auth/invalid-credential" &&
+      typeof err?.message === "string" &&
+      err.message.toLowerCase().includes("audience is not for this project")
+    );
   }
 
-  async authenticate() {
-    this._checkFirebase();
+  _buildAudienceMismatchMessage() {
+    const manifestClientId = this._getManifestOauthClientId();
+    const manifestProjectNumber =
+      this._extractProjectNumberFromClientId(manifestClientId) || "unknown";
+    const firebaseProjectNumber = this._getExpectedProjectNumber() || "unknown";
 
+    if (
+      manifestProjectNumber !== "unknown" &&
+      firebaseProjectNumber !== "unknown" &&
+      manifestProjectNumber === firebaseProjectNumber
+    ) {
+      return `OAuth token was rejected by Firebase even though project numbers match (${firebaseProjectNumber}). Verify manifest oauth2.client_id is a Chrome Extension OAuth client for this exact extension ID, then reload the extension and try again.`;
+    }
+
+    return `OAuth audience mismatch: token audience project is ${manifestProjectNumber} but Firebase project is ${firebaseProjectNumber}. Replace manifest oauth2.client_id with a Chrome App client ID from the Firebase project and reload the extension.`;
+  }
+
+  _getAuthToken(interactive = true) {
     return new Promise((resolve, reject) => {
-      chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+      chrome.identity.getAuthToken({ interactive }, (token) => {
         if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
+          reject(
+            new Error(
+              this._formatChromeIdentityError(chrome.runtime.lastError.message)
+            )
+          );
           return;
         }
 
@@ -33,16 +57,115 @@ class FirebaseStorageService {
           return;
         }
 
-        try {
-          const credential = GoogleAuthProvider.credential(null, token);
-
-          const result = await signInWithCredential(auth, credential);
-          resolve(result.user);
-        } catch (err) {
-          reject(err);
-        }
+        resolve(token);
       });
     });
+  }
+
+  _clearAuthTokenCache(token) {
+    return new Promise((resolve) => {
+      if (chrome?.identity?.clearAllCachedAuthTokens) {
+        chrome.identity.clearAllCachedAuthTokens(() => resolve());
+        return;
+      }
+
+      if (token && chrome?.identity?.removeCachedAuthToken) {
+        chrome.identity.removeCachedAuthToken({ token }, () => resolve());
+        return;
+      }
+
+      resolve();
+    });
+  }
+
+  async _signInWithToken(token) {
+    const credential = GoogleAuthProvider.credential(null, token);
+    const result = await signInWithCredential(auth, credential);
+    return result.user;
+  }
+
+  _getManifestOauthClientId() {
+    try {
+      return chrome?.runtime?.getManifest?.()?.oauth2?.client_id || "";
+    } catch {
+      return "";
+    }
+  }
+
+  _extractProjectNumberFromClientId(clientId) {
+    if (!clientId) return null;
+    const match = clientId.match(/^(\d+)-/);
+    return match ? match[1] : null;
+  }
+
+  _extractProjectNumberFromAppId(appId) {
+    if (!appId) return null;
+    const match = appId.match(/^\d+:(\d+):/);
+    return match ? match[1] : null;
+  }
+
+  _getExpectedProjectNumber() {
+    const appId = auth?.app?.options?.appId || "";
+    return this._extractProjectNumberFromAppId(appId);
+  }
+
+  _validateOAuthConfigOrThrow() {
+    const manifestClientId = this._getManifestOauthClientId();
+    const manifestProjectNumber =
+      this._extractProjectNumberFromClientId(manifestClientId);
+    const firebaseProjectNumber = this._getExpectedProjectNumber();
+
+    if (
+      manifestProjectNumber &&
+      firebaseProjectNumber &&
+      manifestProjectNumber !== firebaseProjectNumber
+    ) {
+      throw new Error(
+        `OAuth project mismatch: manifest oauth2.client_id belongs to project ${manifestProjectNumber}, but Firebase appId belongs to project ${firebaseProjectNumber}. Use a Chrome App OAuth client ID created in the same Google Cloud project as Firebase.`
+      );
+    }
+  }
+
+  _formatChromeIdentityError(message) {
+    if (!message) return "Authentication failed";
+
+    if (message.toLowerCase().includes("bad client id")) {
+      return "Google OAuth is misconfigured (bad client ID). Update manifest.json oauth2.client_id to a valid Chrome App OAuth client and reload the extension in chrome://extensions.";
+    }
+
+    return message;
+  }
+
+  _checkFirebase() {
+    if (!db || !auth) throw new Error("Firebase not initialized");
+  }
+
+  async authenticate() {
+    this._checkFirebase();
+    this._validateOAuthConfigOrThrow();
+
+    const token = await this._getAuthToken(true);
+
+    try {
+      return await this._signInWithToken(token);
+    } catch (err) {
+      if (!this._isFirebaseAudienceMismatchError(err)) {
+        throw err;
+      }
+
+      // Clear any stale Chrome identity cache and retry once.
+      await this._clearAuthTokenCache(token);
+
+      try {
+        const retryToken = await this._getAuthToken(true);
+        return await this._signInWithToken(retryToken);
+      } catch (retryErr) {
+        if (this._isFirebaseAudienceMismatchError(retryErr)) {
+          throw new Error(this._buildAudienceMismatchMessage());
+        }
+        throw retryErr;
+      }
+    }
   }
 
   async getAllVocabulary() {
@@ -53,7 +176,7 @@ class FirebaseStorageService {
         collection(db, "users", auth.currentUser.uid, "vocabulary")
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
     } catch (error) {
       console.error("Error getting vocabulary:", error);
       return [];
@@ -79,6 +202,7 @@ class FirebaseStorageService {
           ...wordData,
           updatedAt: Date.now(),
         });
+        storageService.notifyVocabularyChange();
         return true;
       } else {
         // Add new word
@@ -91,6 +215,7 @@ class FirebaseStorageService {
             updatedAt: Date.now(),
           }
         );
+        storageService.notifyVocabularyChange();
         return true;
       }
     } catch (error) {
@@ -114,6 +239,7 @@ class FirebaseStorageService {
         ...wordData,
         updatedAt: Date.now(),
       });
+      storageService.notifyVocabularyChange();
       return true;
     } catch (error) {
       console.error("Error updating word:", error);
@@ -137,6 +263,7 @@ class FirebaseStorageService {
         lastReview: Date.now(),
         updatedAt: Date.now(),
       });
+      storageService.notifyVocabularyChange();
       return true;
     } catch (error) {
       console.error("Error updating word SRS:", error);
@@ -151,6 +278,7 @@ class FirebaseStorageService {
       await deleteDoc(
         doc(db, "users", auth.currentUser.uid, "vocabulary", wordId)
       );
+      storageService.notifyVocabularyChange();
       return true;
     } catch (error) {
       console.error("Error deleting word:", error);
@@ -196,6 +324,7 @@ class FirebaseStorageService {
         );
       }
       await Promise.all(batch);
+      storageService.notifyVocabularyChange();
       return true;
     } catch (error) {
       console.error("Error importing vocabulary:", error);
@@ -221,6 +350,24 @@ class FirebaseStorageService {
       console.error("Error getting stats:", error);
       return { totalWords: 0, dueToday: 0, reviewedToday: 0 };
     }
+  }
+
+  async signOut() {
+    return new Promise((resolve) => {
+      chrome.identity.getAuthToken({ interactive: false }, async (token) => {
+        if (token) {
+          await new Promise((res) =>
+            chrome.identity.removeCachedAuthToken({ token }, res)
+          );
+        }
+        try {
+          await auth.signOut();
+        } catch (err) {
+          console.error('Firebase signOut error:', err);
+        }
+        resolve();
+      });
+    });
   }
 
   generateId() {
@@ -253,9 +400,35 @@ class FirebaseStorageService {
     try {
       const docRef = doc(db, "users", auth.currentUser.uid, "settings");
       await setDoc(docRef, settings);
+      // Mirror notification-relevant settings to local storage so the background
+      // script's alarm/notification logic can read them without Firestore access.
+      await chrome.storage.local.set({
+        settings: {
+          showNotifications: settings.notifications ?? settings.showNotifications ?? true,
+          dailyReminderTime: settings.dailyReminderTime ?? '09:00',
+        }
+      });
       return true;
     } catch (error) {
       console.error("Error saving settings:", error);
+      return false;
+    }
+  }
+
+  async clearAllVocabulary() {
+    if (!auth.currentUser) throw new Error("Not authenticated");
+    this._checkFirebase();
+    try {
+      const vocabulary = await this.getAllVocabulary();
+      await Promise.all(
+        vocabulary.map(word =>
+          deleteDoc(doc(db, "users", auth.currentUser.uid, "vocabulary", word.id))
+        )
+      );
+      storageService.notifyVocabularyChange();
+      return true;
+    } catch (error) {
+      console.error("Error clearing vocabulary:", error);
       return false;
     }
   }
@@ -297,7 +470,7 @@ class FirebaseStorageService {
         batch.push(updateDoc(docRef, word));
       }
       await Promise.all(batch);
-
+      storageService.notifyVocabularyChange();
       return true;
     } catch (error) {
       console.error("Error resetting progress:", error);
