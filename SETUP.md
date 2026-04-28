@@ -45,9 +45,9 @@ For testing only, you can use simple colored squares:
 
 ### Test Popup Interface
 1. Click the extension icon in the toolbar
-2. You should see three tabs: Today Review, All Vocabulary, Add Word
-3. Check "All Vocabulary" to see your saved word
-4. Go to "Add Word" and try adding a word manually
+2. You should see the vocabulary overview and a shortcut to the full options page
+3. Check the popup vocabulary list to see your saved word
+4. Open the options page and go to "Add Word" to try adding a word manually
 
 ### Test Keyboard Shortcut
 1. Go to any webpage
@@ -56,8 +56,8 @@ For testing only, you can use simple colored squares:
 4. The word should be saved
 
 ### Test Review System
-1. Click the extension icon
-2. Go to "Today Review" tab
+1. Open the options page
+2. Go to "Today Review"
 3. Review a word by clicking Hard, Good, or Easy
 4. The word will be rescheduled based on your response
 
@@ -120,7 +120,7 @@ Before loading the extension, verify these files exist:
 ## Next Steps
 
 1. **Add more words** - Start building your vocabulary
-2. **Review daily** - Check the "Today Review" tab each day
+2. **Review daily** - Check "Today Review" in the options page each day
 3. **Export data** - Regularly backup your vocabulary using Export JSON
 4. **Customize** - Adjust colors, times, and features to your preference
 

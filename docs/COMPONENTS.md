@@ -8,19 +8,13 @@ This document describes the React component hierarchy and relationships within t
 Popup
 ├── PopupApp
 │   ├── Header
-│   ├── TabNavigation (tabs: Add, Vocabulary, Review, Settings)
-│   ├── AddWordTab
 │   ├── VocabularyTab
 │   │   ├── SearchInput
 │   │   ├── VocabularyList
 │   │   │   └── WordCard (repeating)
 │   │   │       └── EditReviewModal (on edit)
 │   │   └── EmptyState (when no words)
-│   ├── ReviewTab
-│   │   ├── ReviewCard
-│   │   └── ReviewModal (for feedback)
-│   └── SettingsSection
-│       └── AlertModal (on alert)
+│   └── EditReviewModal (on edit)
 
 Options Page
 ├── OptionsApp
@@ -35,60 +29,20 @@ Options Page
 ```
 
 ## Popup Components
-
 ### PopupApp (`src/popup/PopupApp.jsx`)
-
-**Purpose**: Main popup container and state management
+- Renders the vocabulary overview in the popup
+- Opens the full options page for review and manual management
+- Handles search, delete, and edit actions for saved words
 
 **Responsibilities**:
-- Manages active tab state (Add, Vocabulary, Review, Settings)
-- Loads vocabulary from storage on mount
-- Renders tab navigation and content
-- Handles tab switching
+- `allVocabulary`: Array of vocabulary items
+- `filteredVocabulary`: Array after search filtering
+- `searchTerm`: Current popup search value
+- `currentReviewWords`: Due-word count used for the header
 
 **State**:
 - `activeTab`: Current tab (string)
 - `vocabulary`: Array of vocabulary items
-- `loading`: Boolean for data loading state
-- `error`: Error message if any
-
-**Props**: None (uses hooks for storage access)
-
----
-
-### Header (`src/popup/components/Header.jsx`)
-
-**Purpose**: Extension branding and logo display
-
-**Responsibilities**:
-- Display extension name and icon
-- Consistent branding across popup
-
-**Props**:
-- None (static component)
-
----
-
-### TabNavigation (`src/popup/components/TabNavigation.jsx`)
-
-**Purpose**: Tab switcher UI
-
-**Responsibilities**:
-- Display 4 tabs: Add, Vocabulary, Review, Settings
-- Handle tab clicks
-- Highlight active tab
-
-**Props**:
-- `activeTab`: Current active tab (string)
-- `onTabChange`: Callback function for tab changes
-
----
-
-### AddWordTab (`src/popup/components/AddWordTab.jsx`)
-
-**Purpose**: Add new vocabulary words
-
-**Responsibilities**:
 - Form to enter word, meaning, examples
 - Fetch word data from Dictionary API
 - Save to local storage
@@ -208,29 +162,6 @@ Options Page
 **Modes**:
 - **edit**: Allows editing word, meaning, examples
 - **review**: Shows 3 buttons (Hard/Good/Easy) to record learning feedback
-
----
-
-### ReviewTab (`src/popup/components/ReviewTab.jsx`)
-
-**Purpose**: Spaced repetition review session
-
-**Responsibilities**:
-- Show words due for review
-- Present one word at a time
-- Handle feedback (Hard/Good/Easy)
-- Update SRS intervals via SRSService
-- Show progress and summary
-
-**State**:
-- `dueWords`: Array of words due for review
-- `currentWordIndex`: Current review position
-- `reviewStats`: Stats (correct/incorrect/total)
-- `completed`: Boolean if review session done
-
-**Key Methods**:
-- `filterDueWords()`: Get words where nextReview <= today
-- `handleReviewFeedback(rating)`: Update word interval and move next
 
 ---
 

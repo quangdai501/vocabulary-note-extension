@@ -9,7 +9,7 @@ This guide will help you test all features of the Vocabulary Note extension.
 3. Chrome notifications enabled
 
 ## Test Checklist
-
+2. Open options page → "Today Review"
 ### ✅ 1. Extension Installation
 
 - [ ] Extension appears in Chrome toolbar
@@ -17,7 +17,7 @@ This guide will help you test all features of the Vocabulary Note extension.
 - [ ] No errors in `chrome://extensions/` page
 - [ ] Popup opens when clicking icon
 
-### ✅ 2. Content Script - Word Selection
+2. Open options page → "Today Review"
 
 **Test 2.1: Inline Popup Display**
 1. Go to any webpage (e.g., https://en.wikipedia.org/wiki/Vocabulary)
@@ -34,7 +34,7 @@ This guide will help you test all features of the Vocabulary Note extension.
 
 **Test 2.3: Play Button**
 1. Highlight a word
-2. Click "Play" in inline popup
+2. Open options page → "Add Word"
 3. Verify pronunciation plays (audio or speech synthesis)
 4. Verify notification shows "Playing pronunciation..."
 
@@ -71,14 +71,14 @@ This guide will help you test all features of the Vocabulary Note extension.
 4. Click the option
 5. Verify word is saved
 
-### ✅ 5. Popup Interface - Review Tab
+### ✅ 5. Options Page - Review Section
 
 **Test 5.1: Empty State**
 1. Clear all vocabulary (if any)
 2. Open popup → "Today Review" tab
 3. Verify empty state shows:
    - Icon
-   - "No words to review today!"
+3. Click "Export JSON" from options page
    - "Great job! Check back tomorrow."
 
 **Test 5.2: Review Card Display**
@@ -160,7 +160,7 @@ This guide will help you test all features of the Vocabulary Note extension.
 4. Verify word is removed from list
 5. Verify statistics update
 
-### ✅ 7. Popup Interface - Add Word Tab
+### ✅ 7. Options Page - Add Word Section
 
 **Test 7.1: Manual Entry - Basic**
 1. Go to "Add Word" tab
@@ -213,15 +213,8 @@ This guide will help you test all features of the Vocabulary Note extension.
 6. Verify JSON structure is correct
 7. Verify all words are present
 
-**Test 8.2: Import JSON**
-1. Export current vocabulary
-2. Clear all vocabulary (delete all words)
-3. Click "Import JSON"
 4. Select exported file
 5. Verify success message
-6. Go to "All Vocabulary"
-7. Verify all words are restored
-
 **Test 8.3: Import with Existing Data**
 1. Have some words in vocabulary
 2. Import a JSON file with different words
@@ -264,9 +257,6 @@ This guide will help you test all features of the Vocabulary Note extension.
 1. Review a word as "Easy"
 2. Verify interval is longer than "Good" would give
 3. Verify ease factor increases
-
-**Test 10.4: Hard Response**
-1. Review a word as "Hard"
 2. Verify interval is shorter than "Good" would give
 3. Verify ease factor decreases
 
@@ -275,14 +265,7 @@ This guide will help you test all features of the Vocabulary Note extension.
 2. Verify "Hard" shows shortest interval
 3. Verify "Good" shows medium interval
 4. Verify "Easy" shows longest interval
-
-### ✅ 11. Background Service & Alarms
-
-**Test 11.1: Daily Alarm Setup**
-1. Install extension
-2. Check Chrome background processes
 3. Verify service worker is active
-4. Check console logs for "Daily alarm set for..."
 
 **Test 11.2: Notification - Due Words**
 1. Add a word and review it

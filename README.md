@@ -36,9 +36,13 @@ A powerful Chrome Extension for learning and storing English vocabulary with dai
    - Customizable reminder time
 
 6. **Popup Interface**
-   - **Today Review Tab**: Review due words with SRS buttons
-   - **All Vocabulary Tab**: Browse and search saved words
-   - **Add Word Tab**: Manually add words with auto-fetch option
+   - **Vocabulary Overview**: Browse and search saved words from the toolbar popup
+   - **Quick Access**: Open the full options page for review, manual entry, and settings
+
+7. **Options Interface**
+   - **Today Review**: Review due words with SRS buttons
+   - **All Vocabulary**: Browse and search saved words
+   - **Add Word**: Manually add words with auto-fetch option
 
 7. **Storage & Export**
    - Local storage using chrome.storage.local
@@ -117,26 +121,28 @@ Vocabulary-note/
 
 **Method 4: Manual Entry**
 1. Click the extension icon
-2. Go to "Add Word" tab
-3. Enter word, meaning, and example
-4. Click "Auto-fetch from Dictionary" to get data automatically
-5. Click "Add Word" to save
+2. Open the full options page from the popup header
+3. Go to "Add Word"
+4. Enter word, meaning, and example
+5. Click "Auto-fetch from Dictionary" to get data automatically
+6. Click "Add Word" to save
 
 ### Reviewing Words
 
 1. Click the extension icon
-2. Go to "Today Review" tab
-3. For each word:
+2. Open the full options page from the popup header
+3. Go to "Today Review"
+4. For each word:
    - Read the word, meaning, and example
    - Click the play button to hear pronunciation
    - Click "Open YouGlish" to see real-world usage
    - Rate your recall: **Hard**, **Good**, or **Easy**
-4. The system automatically schedules the next review
+5. The system automatically schedules the next review
 
 ### Managing Vocabulary
 
 1. Click the extension icon
-2. Go to "All Vocabulary" tab
+2. Use the vocabulary view in the popup, or open the full options page for management
 3. Use the search box to filter words
 4. Click the play button to hear pronunciation
 5. Click the delete button to remove words
@@ -144,16 +150,18 @@ Vocabulary-note/
 ### Export & Import
 
 **Export:**
-1. Go to "Add Word" tab
-2. Scroll to "Import / Export" section
-3. Click "Export JSON"
-4. Save the file to your computer
+1. Open the full options page
+2. Go to "Add Word"
+3. Scroll to "Import / Export" section
+4. Click "Export JSON"
+5. Save the file to your computer
 
 **Import:**
-1. Go to "Add Word" tab
-2. Click "Import JSON"
-3. Select a previously exported JSON file
-4. Words will be merged with existing vocabulary
+1. Open the full options page
+2. Go to "Add Word"
+3. Click "Import JSON"
+4. Select a previously exported JSON file
+5. Words will be merged with existing vocabulary
 
 ## 🧠 Spaced Repetition Algorithm (SM-2)
 

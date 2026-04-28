@@ -7,19 +7,21 @@ This document describes how data moves through the extension across different us
 ### 1. Adding a New Vocabulary Word
 
 ```
-User Input (Popup)
+User Input (Content Page or Options Page)
        ↓
-AddWordTab Component
+Inline Popup or AddWordSection Component
        ↓
 ┌─────────────────────────────────────┐
-│ User fills form:                    │
+│ User fills form or saves selection: │
 │ - Word name                         │
 │ - Meaning (optional)                │
 │ - Examples (optional)               │
 └─────────────────────────────────────┘
        ↓
 ┌─────────────────────────────────────┐
-│ Click "Fetch from Dictionary"       │
+│ Click "Fetch from Dictionary" or   │
+│ save the selected word from content │
+│ script                               │
 │ ↓                                   │
 │ DictionaryService.fetchWord()       │
 │ ↓                                   │
@@ -96,9 +98,9 @@ Render results instantly (client-side only)
 ### 3. Reviewing Vocabulary (Spaced Repetition)
 
 ```
-User clicks "Review" tab
+User opens the options page and clicks "Today Review"
        ↓
-ReviewTab mounts
+ReviewSection mounts
        ↓
 Load vocabulary from storage
        ↓
@@ -160,7 +162,7 @@ Show review summary (total reviewed, stats)
 ### 4. Editing a Word
 
 ```
-User clicks edit icon on WordCard
+User clicks edit icon on WordCard in the popup or options page
        ↓
 EditReviewModal opens in "edit" mode
        ↓
@@ -192,7 +194,7 @@ Show success alert
 ### 5. Deleting a Word
 
 ```
-User clicks delete icon on WordCard
+User clicks delete icon on WordCard in the popup or options page
        ↓
 Show confirmation dialog
        ↓

@@ -205,14 +205,15 @@ Follow [BUILD_PROCESS.md](./BUILD_PROCESS.md):
 │         Extension UI (React)                    │
 ├─────────────────────────────────────────────────┤
 │  Popup              Options            Content  │
-│  (toolbar)          (full-page)        (inject) │
+│  (vocabulary        (full-page)        (inject) │
+│   overview)         management)                  │
 │                                                  │
-│  Tabs:              Sections:         Features: │
-│  - Add              - Add              - Text   │
-│  - Vocabulary       - Vocabulary        selection│
-│  - Review           - Review           - Inline │
-│  - Settings         - Settings          popup   │
-│  - (Sign in)        - Export/Import    - Translate
+│  Popup:             Sections:         Features: │
+│  - Vocabulary       - Add              - Text   │
+│  - Search           - Vocabulary        selection│
+│  - Settings link    - Review           - Inline │
+│  - Sign in gate     - Settings          popup   │
+│                     - Export/Import    - Translate
 │                                                  │
 └────────┬──────────────────────────────┬─────────┘
          │                              │

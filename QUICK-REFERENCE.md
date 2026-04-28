@@ -12,7 +12,7 @@
 1. **Inline Popup**: Highlight → Click "Save"
 2. **Keyboard**: Highlight → `Ctrl/Cmd+Shift+S`
 3. **Right-Click**: Highlight → Right-click → "Save to Vocabulary"
-4. **Manual**: Extension icon → "Add Word" tab → Enter details
+4. **Manual**: Extension icon → open the full options page → "Add Word" → Enter details
 
 ## Review System
 - **Hard**: Difficult to recall → Shorter interval

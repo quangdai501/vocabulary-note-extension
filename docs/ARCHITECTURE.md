@@ -7,9 +7,9 @@
 ## High-Level Structure
 
 This is a vocabulary learning extension that runs in the browser and helps users build and review vocabulary with spaced repetition. The extension features:
-- A popup interface for quick vocabulary access from the toolbar
-- A full-page options interface for detailed management
-- A content script for inline text selection and translation
+- A popup interface for quick vocabulary browsing and settings access from the toolbar
+- A full-page options interface for review, manual entry, and detailed management
+- A content script for inline text selection and saving
 - A background service worker for event handling and messaging
 - Cloud synchronization via Firebase (optional)
 
@@ -24,9 +24,9 @@ This is a vocabulary learning extension that runs in the browser and helps users
 │  │   Popup UI       │  │  Options Page    │  │ Content Script   │
 │  │  (React App)     │  │  (React App)     │  │  (Injected)      │
 │  │                  │  │                  │  │                  │
-│  │ - Tabs           │  │ - Add Word       │  │ - Text selection │
-│  │ - Vocabulary     │  │ - Vocabulary     │  │ - Inline popup   │
-│  │ - Review         │  │ - Review         │  │ - Translation    │
+│  │ - Vocabulary     │  │ - Add Word       │  │ - Text selection │
+│  │ - Settings       │  │ - Vocabulary     │  │ - Inline popup   │
+│  │ - Quick access   │  │ - Review         │  │ - Translation    │
 │  │ - Settings       │  │ - Settings       │  │                  │
 │  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
 │           │                     │                     │
@@ -89,7 +89,7 @@ This is a vocabulary learning extension that runs in the browser and helps users
 
 | Entry | Source | Build Output | Purpose |
 |---|---|---|---|
-| **Popup** | `src/popup/mainPopup.jsx` | `dist/popup.js` | Toolbar popup interface (React) |
+| **Popup** | `src/popup/mainPopup.jsx` | `dist/popup.js` | Toolbar popup vocabulary overview and settings shortcut (React) |
 | **Options** | `src/options/main.jsx` | `dist/options.js` | Full-page settings & management (React) |
 | **Content** | `src/content/content.jsx` | `dist/content.js` | Injected into web pages (IIFE) |
 | **Background** | `src/background/background.js` | Loaded directly | Service worker for events & messaging |

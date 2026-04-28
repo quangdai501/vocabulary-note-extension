@@ -57,7 +57,7 @@ Vocabulary-note/
 - [x] Spaced Repetition System (SM-2 algorithm)
 - [x] Daily reminder with Chrome alarms
 - [x] Desktop notifications
-- [x] Three-tab popup interface
+- [x] Popup vocabulary overview with options-page management
 
 ### Vocabulary Management ✅
 - [x] Save words from webpage
@@ -167,11 +167,11 @@ Vocabulary-note/
 - **Method 1**: Highlight word → Click "Save" in inline popup
 - **Method 2**: Highlight word → Press `Ctrl+Shift+S` (or `Cmd+Shift+S`)
 - **Method 3**: Right-click word → "Save to Vocabulary"
-- **Method 4**: Open popup → "Add Word" tab → Manual entry
+- **Method 4**: Open popup → settings/options shortcut → "Add Word" section → Manual entry
 
 ### Reviewing Words
 1. Click extension icon
-2. Go to "Today Review" tab
+2. Open the full options page and go to "Today Review"
 3. Read word, meaning, example
 4. Rate difficulty: Hard / Good / Easy
 5. Word automatically reschedules based on your response
@@ -180,8 +180,8 @@ Vocabulary-note/
 - **Search**: Type in search box on "All Vocabulary" tab
 - **Play**: Click speaker icon to hear pronunciation
 - **Delete**: Click X icon to remove word
-- **Export**: Go to "Add Word" → Export JSON
-- **Import**: Go to "Add Word" → Import JSON
+- **Export**: Open options page → "Add Word" → Export JSON
+- **Import**: Open options page → "Add Word" → Import JSON
 
 ## 🧪 Testing
 
