@@ -3,12 +3,14 @@ import storageService from '../../services/storage.js'
 import dictionaryService from '../../services/dictionary.js'
 import pronunciationService from '../../services/pronunciation.js'
 
-function AddWordSection({ onVocabularyUpdate, service }) {
+function AddWordSection({ onVocabularyUpdate, onWordAdded, service }) {
   const [word, setWord] = useState('')
   const [meaning, setMeaning] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const activeService = service ?? storageService
+  const refreshVocabulary = onVocabularyUpdate ?? onWordAdded
 
   const handleLookup = async () => {
     if (!word.trim()) {
@@ -63,8 +65,13 @@ function AddWordSection({ onVocabularyUpdate, service }) {
         repetitions: 0
       }
 
-      await service.saveWord(wordData)
-      onVocabularyUpdate()
+      const saved = await activeService.saveWord(wordData)
+      if (!saved) {
+        setError('Failed to save word. Please try again.')
+        return
+      }
+
+      await refreshVocabulary?.()
 
       // Reset form
       setWord('')

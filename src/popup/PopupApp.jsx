@@ -3,7 +3,7 @@ import storageService from '../services/storage.js';
 import firebaseStorage from '../services/firebaseStorage.js';
 import { auth } from '../services/firebase.js';
 import srsService from '../services/srs.js';
-import { Header, TabNavigation, ReviewTab, VocabularyTab, AddWordTab, EditReviewModal, AlertProvider, useAlert } from './components/index.js';
+import { Header, VocabularyTab, EditReviewModal, AlertProvider, useAlert } from './components/index.js';
 import SignInScreen from './components/SignInScreen.jsx';
 
 /**
@@ -20,10 +20,8 @@ function PopupApp() {
 
 function PopupAppContent() {
   const { showAlert, showConfirm } = useAlert();
-  const [activeTab, setActiveTab] = React.useState('review');
   const [allVocabulary, setAllVocabulary] = React.useState([]);
   const [currentReviewWords, setCurrentReviewWords] = React.useState([]);
-  const [currentReviewIndex, setCurrentReviewIndex] = React.useState(0);
   const [filteredVocabulary, setFilteredVocabulary] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
@@ -125,20 +123,6 @@ function PopupAppContent() {
     chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
   };
 
-  const switchTab = (tabName) => {
-    setActiveTab(tabName);
-  };
-
-  const handleReviewComplete = async () => {
-    const newIndex = currentReviewIndex + 1;
-    if (newIndex >= currentReviewWords.length) {
-      await loadData();
-      setCurrentReviewIndex(0);
-    } else {
-      setCurrentReviewIndex(newIndex);
-    }
-  };
-
   const handleEditNextReview = (word) => {
     setEditingWord(word);
     setIsEditModalOpen(true);
@@ -172,9 +156,6 @@ function PopupAppContent() {
     }
   };
 
-  const currentReviewWord = currentReviewWords[currentReviewIndex];
-  const predictedIntervals = currentReviewWord ? srsService.getPredictedIntervals(currentReviewWord) : null;
-
   // Auth loading — prevent flash
   if (authLoading) {
     return (
@@ -207,41 +188,16 @@ function PopupAppContent() {
         user={user}
       />
 
-      <TabNavigation
-        activeTab={activeTab}
-        onTabChange={switchTab}
+      <VocabularyTab
+        filteredVocabulary={filteredVocabulary}
+        allVocabulary={allVocabulary}
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        onEditNextReview={handleEditNextReview}
+        onResetProgress={handleResetProgress}
+        onVocabularyChange={loadData}
+        service={firebaseStorage}
       />
-
-      {activeTab === 'review' && (
-        <ReviewTab
-          currentReviewWords={currentReviewWords}
-          currentReviewIndex={currentReviewIndex}
-          onReviewComplete={handleReviewComplete}
-          service={firebaseStorage}
-        />
-      )}
-
-      {activeTab === 'vocabulary' && (
-        <VocabularyTab
-          filteredVocabulary={filteredVocabulary}
-          allVocabulary={allVocabulary}
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          onEditNextReview={handleEditNextReview}
-          onResetProgress={handleResetProgress}
-          onVocabularyChange={loadData}
-          service={firebaseStorage}
-        />
-      )}
-
-      {activeTab === 'add' && (
-        <AddWordTab
-          allVocabulary={allVocabulary}
-          onVocabularyChange={loadData}
-          onResetProgress={handleResetProgress}
-          service={firebaseStorage}
-        />
-      )}
 
       <EditReviewModal
         isOpen={isEditModalOpen}
