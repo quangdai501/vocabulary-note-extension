@@ -138,9 +138,23 @@ class FirebaseStorageService {
     if (!db || !auth) throw new Error("Firebase not initialized");
   }
 
+  // Try to restore the Firebase session using a cached Chrome identity token,
+  // without showing any UI. Throws if no cached token is available.
+  async authenticateSilently() {
+    this._checkFirebase();
+    const token = await this._getAuthToken(false); // non-interactive — throws if no cache
+    return await this._signInWithToken(token);
+  }
+
   async authenticate() {
     this._checkFirebase();
     this._validateOAuthConfigOrThrow();
+
+    // Clear any cached token first so Chrome always shows the account chooser.
+    const existingToken = await this._getAuthToken(false).catch(() => null);
+    if (existingToken) {
+      await this._clearAuthTokenCache(existingToken);
+    }
 
     const token = await this._getAuthToken(true);
 
@@ -378,7 +392,7 @@ class FirebaseStorageService {
     if (!auth.currentUser) return this.getDefaultSettings();
     this._checkFirebase();
     try {
-      const docRef = doc(db, "users", auth.currentUser.uid, "settings");
+      const docRef = doc(db, "users", auth.currentUser.uid, "settings", "preferences");
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return docSnap.data();
@@ -398,7 +412,7 @@ class FirebaseStorageService {
     if (!auth.currentUser) throw new Error("Not authenticated");
     this._checkFirebase();
     try {
-      const docRef = doc(db, "users", auth.currentUser.uid, "settings");
+      const docRef = doc(db, "users", auth.currentUser.uid, "settings", "preferences");
       await setDoc(docRef, settings);
       // Mirror notification-relevant settings to local storage so the background
       // script's alarm/notification logic can read them without Firestore access.
