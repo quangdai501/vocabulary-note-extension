@@ -27,7 +27,7 @@ cp .env.example .env
 npm run dev
 
 # In another terminal, build content script (as needed)
-npx vite build --config vite.content.config.js
+npm run build:content
 
 # Open Chrome and load unpacked:
 # 1. chrome://extensions
@@ -38,9 +38,8 @@ npx vite build --config vite.content.config.js
 ### Production Build
 
 ```bash
-# Build everything for release
+# Build everything (popup + options + content script in parallel)
 npm run build
-npx vite build --config vite.content.config.js
 
 # Output is in dist/
 # Zip dist/ folder to create extension package
@@ -293,14 +292,11 @@ npx vite build --config vite.content.config.js --watch
 ### Build All Artifacts
 
 ```bash
-# Build popup + options (minified)
+# Build popup + options + content script (minified, in parallel)
 npm run build
-
-# Build content script (minified, IIFE)
-npx vite build --config vite.content.config.js
 ```
 
-Both commands output to `dist/`.
+Output goes to `dist/`.
 
 ### Package for Distribution
 
@@ -581,9 +577,9 @@ This builds the extension on every push and saves artifacts.
 |---------|---------|--------|
 | `npm install` | Install dependencies | `node_modules/` |
 | `npm run dev` | Start dev server | Hot reload for popup/options |
-| `npm run build` | Build popup + options | `dist/popup.js`, `dist/options.js` |
-| `npx vite build --config vite.content.config.js` | Build content script | `dist/content.js` |
-| `npx vite build --config vite.content.config.js --watch` | Watch content script | Rebuild on file changes |
+| `npm run build` | Build everything (parallel) | `dist/popup.js`, `dist/options.js`, `dist/content.js` |
+| `npm run build:ui` | Build popup + options only | `dist/popup.js`, `dist/options.js` |
+| `npm run build:content` | Build content script only | `dist/content.js` |
 
 **Load unpacked extension**: Repo root → `chrome://extensions`
 

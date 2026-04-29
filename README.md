@@ -1,315 +1,258 @@
 # Vocabulary Note - Chrome Extension
 
-A powerful Chrome Extension for learning and storing English vocabulary with daily reminders using Spaced Repetition (SM-2 algorithm).
+A Chrome Extension for learning and storing English vocabulary with spaced repetition (SM-2 algorithm), Firebase cloud sync, and daily review reminders.
 
-## 🎯 Features
+## Features
 
-### Core Features
+- **Vocabulary Capture** — Select any word on a webpage to save it via inline popup, keyboard shortcut (`Ctrl+Shift+S` / `Cmd+Shift+S`), or context menu
+- **Dictionary Integration** — Auto-fetches definitions, IPA, audio, and examples from Free Dictionary API
+- **Spaced Repetition (SM-2)** — Scientifically proven algorithm with Hard/Good/Easy difficulty levels
+- **Cloud Sync** — Optional Google Sign-In via Firebase Auth syncs vocabulary to Firestore
+- **Daily Reminders** — Chrome alarms and desktop notifications for due reviews
+- **Pronunciation** — Audio playback with Web Speech API fallback
+- **Import/Export** — JSON backup and restore of vocabulary data
 
-1. **Vocabulary Capture**
-   - Select any English word on a webpage
-   - Inline popup with Save, Play pronunciation, and YouGlish options
-   - Keyboard shortcut (Ctrl+Shift+S / Cmd+Shift+S) to quickly save words
-   - Context menu integration
+## Tech Stack
 
-2. **Comprehensive Word Data**
-   - Word definition and meaning
-   - IPA pronunciation notation
-   - Audio pronunciation (with fallback to Web Speech API)
-   - Example sentences
-   - Direct link to YouGlish for real-world usage
+- **Manifest V3** Chrome Extension
+- **React 18** + **Vite** (popup and options pages)
+- **Tailwind CSS v4** for styling
+- **Firebase** (Auth, Firestore, Cloud Functions)
+- **Content script** bundled as IIFE via separate Vite config
 
-3. **Dictionary Integration**
-   - Automatic fetching from Free Dictionary API
-   - Fallback to manual entry if word not found
-   - Parses definitions, examples, IPA, and audio
-
-4. **Spaced Repetition System (SM-2)**
-   - Scientifically proven algorithm for optimal learning
-   - Three difficulty levels: Hard, Good, Easy
-   - Automatic scheduling of next review
-   - Tracks interval, repetition count, and ease factor
-
-5. **Daily Reminders**
-   - Chrome alarms for scheduled reviews
-   - Desktop notifications for due words
-   - Customizable reminder time
-
-6. **Popup Interface**
-   - **Vocabulary Overview**: Browse and search saved words from the toolbar popup
-   - **Quick Access**: Open the full options page for review, manual entry, and settings
-
-7. **Options Interface**
-   - **Today Review**: Review due words with SRS buttons
-   - **All Vocabulary**: Browse and search saved words
-   - **Add Word**: Manually add words with auto-fetch option
-
-7. **Storage & Export**
-   - Local storage using chrome.storage.local
-   - Export vocabulary as JSON
-   - Import vocabulary from JSON
-   - Data structure optimized for future export formats
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-Vocabulary-note/
-├── manifest.json                 # Extension manifest (Manifest V3)
-├── background/
-│   └── background.js            # Service worker for alarms & notifications
-├── content/
-│   ├── content.js               # Content script for word selection
-│   └── content.css              # Styles for inline popup
-├── popup/
-│   ├── popup.html               # Extension popup interface
-│   ├── popup.js                 # Popup logic and UI controller
-│   └── popup.css                # Popup styles
-├── services/
-│   ├── dictionary.js            # Dictionary API integration
-│   ├── srs.js                   # Spaced Repetition System (SM-2)
-│   ├── storage.js               # Chrome storage management
-│   └── pronunciation.js         # Audio pronunciation handling
-├── utils/
-│   ├── constants.js             # App constants and configuration
-│   └── example-data.js          # Example data structures
-├── icons/
-│   ├── icon16.png               # 16x16 icon (needs to be created)
-│   ├── icon48.png               # 48x48 icon (needs to be created)
-│   ├── icon128.png              # 128x128 icon (needs to be created)
-│   └── icon.svg                 # Source SVG icon
-└── README.md                    # This file
+vocabulary-note-extension/
+├── manifest.json                  # Extension manifest (Manifest V3)
+├── popup.html                     # Popup entry HTML
+├── options.html                   # Options page entry HTML
+├── vite.config.js                 # Vite config for popup + options
+├── vite.content.config.js         # Vite config for content script (IIFE)
+├── firebase.json                  # Firebase project config
+├── firestore.rules                # Firestore security rules
+├── src/
+│   ├── background/
+│   │   └── background.js          # Service worker (alarms, context menus, messaging)
+│   ├── popup/
+│   │   ├── mainPopup.jsx          # Popup entry point
+│   │   ├── PopupApp.jsx           # Popup root component
+│   │   ├── popup.css              # Popup styles
+│   │   ├── tailwind.css           # Tailwind directives
+│   │   └── components/            # Header, VocabularyTab, SearchInput, WordCard, etc.
+│   ├── options/
+│   │   ├── main.jsx               # Options entry point
+│   │   ├── OptionsApp.jsx         # Options root component (auth gate)
+│   │   ├── tailwind.css           # Tailwind directives
+│   │   └── components/            # ReviewSection, VocabularySection, AddWordSection, etc.
+│   ├── content/
+│   │   ├── content.jsx            # Content script (word selection + inline popup)
+│   │   └── content.css            # Content script styles
+│   ├── services/
+│   │   ├── storage.js             # chrome.storage.local CRUD (StorageService)
+│   │   ├── firebaseStorage.js     # Firestore CRUD + auth (FirebaseStorageService)
+│   │   ├── firebase.js            # Firebase app initialization
+│   │   ├── dictionary.js          # Free Dictionary API integration
+│   │   ├── srs.js                 # SM-2 spaced repetition algorithm
+│   │   └── pronunciation.js       # Audio playback + Web Speech API fallback
+│   ├── assets/
+│   │   └── icons/                 # SVG icons (icon16, icon48, icon128)
+│   └── utils/
+│       └── constants.js           # App constants and configuration
+├── functions/                     # Firebase Cloud Functions (TypeScript)
+│   └── src/
+│       ├── index.ts               # onWordCreate trigger (FCM push notifications)
+│       └── utils/sendFcm.ts       # FCM send helper
+├── packages/
+│   └── shared-core/               # Shared TypeScript library (SRS types, algorithms)
+│       └── src/
+│           ├── index.ts
+│           ├── srs.ts
+│           └── types.ts
+├── tests/                         # Test suites
+│   ├── e2e-checklist.md
+│   └── integration/
+├── scripts/
+│   └── verify-word-trigger.js     # Firestore trigger verification script
+├── docs/                          # Detailed architecture documentation
+│   ├── INDEX.md                   # Documentation index
+│   ├── ARCHITECTURE.md            # System overview and diagrams
+│   ├── BUILD_PROCESS.md           # Build and dev setup guide
+│   ├── COMPONENTS.md              # React component hierarchy
+│   ├── DATA_FLOW.md               # Data movement patterns
+│   └── SERVICES.md                # Service layer APIs
+└── dist/                          # Build output (popup.js, options.js, content.js, etc.)
 ```
 
-## 🚀 Installation
+## Quick Start
 
-### Development Mode
+### Prerequisites
 
-1. **Clone or download** this project to your local machine
+- Node.js 16+
+- npm 7+
+- Chrome 90+ (or any Chromium-based browser)
 
-2. **Create icon files** (required):
-   - Convert `icons/icon.svg` to PNG in three sizes: 16x16, 48x48, 128x128
-   - Save them as `icon16.png`, `icon48.png`, `icon128.png` in the `icons/` folder
-   - You can use online tools like [favicon.io](https://favicon.io/) or [icoconverter.com](https://www.icoconverter.com/)
+### Installation
 
-3. **Load extension in Chrome**:
-   - Open Chrome and navigate to `chrome://extensions/`
-   - Enable "Developer mode" (toggle in top-right corner)
-   - Click "Load unpacked"
-   - Select the `Vocabulary-note` folder
+```bash
+# Install dependencies
+npm install
 
-4. **Start using**:
-   - Click the extension icon in the toolbar
-   - Select words on any webpage
-   - Use the keyboard shortcut `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac)
+# Create .env with Firebase config
+cp .env.example .env
+# Fill in VITE_FIREBASE_* variables (see Environment Variables below)
+```
 
-## 💡 Usage Guide
+### Development
+
+```bash
+# Start dev server (popup + options pages with hot reload)
+npm run dev
+
+# Build content script separately (required for content script changes)
+npm run build:content
+
+# Load the extension in Chrome:
+# 1. Go to chrome://extensions/
+# 2. Enable "Developer mode"
+# 3. Click "Load unpacked" → select repo root
+# 4. Reload after content script rebuilds
+```
+
+### Production Build
+
+```bash
+# Build everything (popup + options + content script in parallel)
+npm run build
+```
+
+## Environment Variables
+
+Create a `.env` file in the project root with your Firebase config:
+
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_FIREBASE_MEASUREMENT_ID=...
+```
+
+If any variable is missing, the extension falls back to local-only mode automatically.
+
+## Architecture
+
+### Entry Points
+
+| Entry | Source | Build Output | Purpose |
+|---|---|---|---|
+| Popup | `src/popup/mainPopup.jsx` | `dist/popup.js` | Toolbar popup (vocabulary browse, search) |
+| Options | `src/options/main.jsx` | `dist/options.js` | Full-page management (review, add, settings) |
+| Content | `src/content/content.jsx` | `dist/content.js` | Injected into web pages (word selection) |
+| Background | `src/background/background.js` | loaded directly | Service worker (alarms, context menus) |
+
+### Two-Storage Pattern
+
+- **Primary**: `chrome.storage.local` via `StorageService` — always available, works offline
+- **Secondary**: Firestore via `FirebaseStorageService` — optional cloud sync, requires Google Sign-In
+- Both services share the same interface, so UI components accept either as a `service` prop
+
+### Authentication
+
+Google Sign-In is handled via `chrome.identity.getAuthToken` + Firebase Auth. See [AUTHENTICATION.md](AUTHENTICATION.md) for the full flow.
+
+### Cloud Functions
+
+Firebase Cloud Functions (`functions/`) send FCM push notifications when a new word is saved to Firestore.
+
+### Shared Core
+
+`packages/shared-core/` contains shared TypeScript code (SRS types and algorithms) intended for reuse across the extension and potential mobile app.
+
+## Usage
 
 ### Saving Words
 
-**Method 1: Text Selection**
-1. Highlight any word on a webpage
-2. An inline popup will appear with three buttons
-3. Click "Save" to add the word to your vocabulary
-
-**Method 2: Keyboard Shortcut**
-1. Highlight a word
-2. Press `Ctrl+Shift+S` (Windows/Linux) or `Cmd+Shift+S` (Mac)
-
-**Method 3: Context Menu**
-1. Right-click on selected text
-2. Choose "Save to Vocabulary"
-
-**Method 4: Manual Entry**
-1. Click the extension icon
-2. Open the full options page from the popup header
-3. Go to "Add Word"
-4. Enter word, meaning, and example
-5. Click "Auto-fetch from Dictionary" to get data automatically
-6. Click "Add Word" to save
+1. **Text Selection** — Highlight a word on any webpage, click "Save" in the inline popup
+2. **Keyboard Shortcut** — Highlight a word, press `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac)
+3. **Context Menu** — Right-click selected text, choose "Save to Vocabulary"
+4. **Manual Entry** — Options page > "Add Word" section with optional auto-fetch
 
 ### Reviewing Words
 
-1. Click the extension icon
-2. Open the full options page from the popup header
-3. Go to "Today Review"
-4. For each word:
-   - Read the word, meaning, and example
-   - Click the play button to hear pronunciation
-   - Click "Open YouGlish" to see real-world usage
-   - Rate your recall: **Hard**, **Good**, or **Easy**
-5. The system automatically schedules the next review
+1. Open the options page (from popup header or `chrome://extensions`)
+2. Go to "Today Review"
+3. Rate each word: **Hard**, **Good**, or **Easy**
+4. The SM-2 algorithm schedules the next review automatically
 
 ### Managing Vocabulary
 
-1. Click the extension icon
-2. Use the vocabulary view in the popup, or open the full options page for management
-3. Use the search box to filter words
-4. Click the play button to hear pronunciation
-5. Click the delete button to remove words
+- **Search**: Filter words in the vocabulary list
+- **Play**: Hear pronunciation (audio URL or Web Speech API fallback)
+- **Export/Import**: JSON backup from the options page settings
 
-### Export & Import
+## Spaced Repetition (SM-2)
 
-**Export:**
-1. Open the full options page
-2. Go to "Add Word"
-3. Scroll to "Import / Export" section
-4. Click "Export JSON"
-5. Save the file to your computer
+| Review # | Interval |
+|---|---|
+| 1st | 1 day |
+| 2nd | 6 days |
+| Subsequent | `previous_interval * easeFactor` |
 
-**Import:**
-1. Open the full options page
-2. Go to "Add Word"
-3. Click "Import JSON"
-4. Select a previously exported JSON file
-5. Words will be merged with existing vocabulary
+Ease factor adjusts based on difficulty rating (min 1.3, initial 2.5). Hard responses shorten intervals (x0.5), Easy responses lengthen them (x1.3).
 
-## 🧠 Spaced Repetition Algorithm (SM-2)
+## Firebase Emulators
 
-The extension uses the SM-2 (SuperMemo 2) algorithm for optimal learning:
+```bash
+# Install functions dependencies
+npm run functions:install
 
-### How It Works
+# Start Firestore + Functions emulators
+npm run emulators:start
 
-1. **Initial State**: New words start with interval = 0, repetition = 0, easeFactor = 2.5
+# Verify word trigger
+npm run verify:word-trigger
+```
 
-2. **After Each Review**:
-   - **Hard (Quality 3)**: Difficult to recall → shorter interval
-   - **Good (Quality 4)**: Recalled with effort → standard interval
-   - **Easy (Quality 5)**: Easy recall → longer interval
-
-3. **Interval Calculation**:
-   - First review: 1 day
-   - Second review: 6 days
-   - Subsequent reviews: previous_interval × easeFactor
-
-4. **Ease Factor**: Adjusts based on performance
-   - Formula: `EF' = EF + (0.1 - (5 - quality) × (0.08 + (5 - quality) × 0.02))`
-   - Minimum: 1.3
-
-5. **Modifiers**:
-   - Hard: interval × 0.5
-   - Easy: interval × 1.3
-
-### Example Timeline
-
-- Day 0: Learn word "serendipity"
-- Day 1: Review (Good) → Next review in 6 days
-- Day 7: Review (Easy) → Next review in ~16 days
-- Day 23: Review (Good) → Next review in ~39 days
-- And so on...
-
-## 🛠️ Technical Stack
-
-- **Manifest Version**: V3 (latest Chrome Extension standard)
-- **JavaScript**: Vanilla ES6+ with modules
-- **Storage**: chrome.storage.local
-- **APIs**:
-  - [Free Dictionary API](https://dictionaryapi.dev/)
-  - Web Speech API (speechSynthesis)
-  - Chrome Alarms API
-  - Chrome Notifications API
-  - Chrome Context Menus API
-
-## 📊 Data Structure
-
-### Vocabulary Object
+## Vocabulary Data Structure
 
 ```javascript
 {
-  id: "word_1704556800000_abc123def",
-  word: "serendipity",
-  meaning: "(noun) The occurrence of events by chance...",
-  examples: ["A fortunate stroke of serendipity..."],
-  ipa: "/ˌserənˈdɪpɪti/",
-  audioUrl: "https://...",
-  youglishLink: "https://youglish.com/pronounce/serendipity/english",
-  interval: 6,
-  repetition: 2,
-  easeFactor: 2.6,
-  nextReview: 1705161600000,
-  lastReview: 1704643200000,
-  createdAt: 1704556800000,
-  updatedAt: 1704643200000,
-  isManual: false
+  id: "word_<timestamp>_<random>",
+  word: string,
+  meaning: string,
+  examples: string[],
+  ipa: string,
+  audioUrl: string,
+  youglishLink: string,
+  interval: number,        // days until next review
+  repetition: number,
+  easeFactor: number,      // min 1.3, initial 2.5
+  nextReview: number,      // Unix ms timestamp
+  lastReview: number,
+  createdAt: number,
+  updatedAt: number,
+  isManual: boolean
 }
 ```
 
-## 🎨 Customization
+## Documentation
 
-### Change Daily Reminder Time
+- [AUTHENTICATION.md](AUTHENTICATION.md) — Auth flow, sign-in/sign-out, storage services
+- [docs/](docs/INDEX.md) — Detailed architecture, components, data flow, services, build process
 
-1. Open `background/background.js`
-2. Find the `setupDailyAlarm()` function
-3. Modify the default time:
-   ```javascript
-   const reminderTime = settings.dailyReminderTime || '09:00'; // Change '09:00'
-   ```
+## Manifest Permissions
 
-### Customize Colors
+| Permission | Purpose |
+|---|---|
+| `storage` | Local vocabulary persistence |
+| `alarms` | Daily review reminders |
+| `notifications` | Desktop notifications |
+| `contextMenus` | Right-click "Save to Vocabulary" |
+| `identity` | Google OAuth for Firebase Auth |
 
-1. Open `popup/popup.css`
-2. Find the gradient definitions:
-   ```css
-   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-   ```
-3. Replace with your preferred colors
-
-## 🐛 Troubleshooting
-
-### Icons Not Showing
-- Make sure icon files (16x16, 48x48, 128x128) are present in the `icons/` folder
-- Check that filenames match exactly: `icon16.png`, `icon48.png`, `icon128.png`
-
-### Content Script Not Working
-- Refresh the page after installing the extension
-- Check if the site allows content scripts (some sites block extensions)
-
-### Pronunciation Not Playing
-- Check browser audio permissions
-- Ensure the audio URL is valid
-- Web Speech API fallback should work if audio URL fails
-
-### Daily Reminders Not Working
-- Check Chrome notification permissions
-- Ensure Chrome is running at the reminder time
-- Alarms persist even when popup is closed
-
-## 🚀 Future Enhancements
-
-Potential features for future versions:
-
-- [ ] Word difficulty tagging
-- [ ] Multiple example sentences per word
-- [ ] CSV export format
-- [ ] Anki integration
-- [ ] Dark mode
-- [ ] Statistics dashboard
-- [ ] Word of the day
-- [ ] Pronunciation practice mode
-- [ ] Sync across devices (using chrome.storage.sync)
-- [ ] Multiple languages support
-
-## 📝 License
+## License
 
 This project is open source and available for educational purposes.
-
-## 🤝 Contributing
-
-Feel free to fork, modify, and improve this extension. Some areas that could use improvement:
-
-- Better error handling
-- Unit tests
-- Performance optimization
-- UI/UX enhancements
-- Additional API integrations
-
-## 📞 Support
-
-For issues, questions, or suggestions:
-- Check the troubleshooting section
-- Review the code comments for implementation details
-- Examine the example data structure in `utils/example-data.js`
-
----
-
-**Built with ❤️ for language learners**
-`npx vite build --config vite.content.config.js`
