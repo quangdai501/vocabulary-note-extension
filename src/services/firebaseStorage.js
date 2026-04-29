@@ -60,6 +60,53 @@ class FirebaseStorageService {
     });
   }
 
+  /**
+   * Launch an interactive OAuth flow that always shows the Google account chooser.
+   * Uses chrome.identity.launchWebAuthFlow with prompt=select_account.
+   */
+  _launchWebAuthFlowForToken() {
+    return new Promise((resolve, reject) => {
+      const manifest = chrome.runtime.getManifest();
+      const clientId = manifest.oauth2.client_id;
+      const redirectUrl = chrome.identity.getRedirectURL();
+      const scopes = (manifest.oauth2.scopes || ["openid", "email", "profile"]).join(" ");
+
+      const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      authUrl.searchParams.set("client_id", clientId);
+      authUrl.searchParams.set("redirect_uri", redirectUrl);
+      authUrl.searchParams.set("response_type", "token");
+      authUrl.searchParams.set("scope", scopes);
+      authUrl.searchParams.set("prompt", "select_account");
+
+      chrome.identity.launchWebAuthFlow(
+        { url: authUrl.toString(), interactive: true },
+        (responseUrl) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+
+          if (!responseUrl) {
+            reject(new Error("No response from auth flow"));
+            return;
+          }
+
+          // Extract access_token from the URL fragment
+          const hash = new URL(responseUrl).hash.substring(1);
+          const params = new URLSearchParams(hash);
+          const token = params.get("access_token");
+
+          if (!token) {
+            reject(new Error("No access token in response"));
+            return;
+          }
+
+          resolve(token);
+        }
+      );
+    });
+  }
+
   _clearAuthTokenCache(token) {
     return new Promise((resolve) => {
       if (chrome?.identity?.clearAllCachedAuthTokens) {
@@ -138,39 +185,76 @@ class FirebaseStorageService {
     if (!db || !auth) throw new Error("Firebase not initialized");
   }
 
-  // Try to restore the Firebase session using a cached Chrome identity token,
-  // without showing any UI. Throws if no cached token is available.
+  // Try to restore the Firebase session using a cached OAuth token from
+  // chrome.storage.local, without showing any UI.
   async authenticateSilently() {
     this._checkFirebase();
-    const token = await this._getAuthToken(false); // non-interactive — throws if no cache
+    const result = await chrome.storage.local.get('oauthAccessToken');
+    const token = result.oauthAccessToken;
+    if (!token) throw new Error('No cached token');
     return await this._signInWithToken(token);
+  }
+
+  /**
+   * Request the background service worker to run the OAuth flow on our behalf.
+   * The background script stays alive even when the popup closes, so the
+   * launchWebAuthFlow can complete without being interrupted.
+   * Once we have the token, we sign in to Firebase from this (popup) context.
+   */
+  async authenticateFromPopup() {
+    this._checkFirebase();
+    this._validateOAuthConfigOrThrow();
+
+    const response = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({ action: 'launchOAuthFlow' }, (resp) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        resolve(resp);
+      });
+    });
+
+    if (!response?.success || !response.token) {
+      throw new Error(response?.error || 'Authentication failed');
+    }
+
+    const token = response.token;
+
+    try {
+      const user = await this._signInWithToken(token);
+      // Cache the token so we can restore the session when the popup reopens
+      await chrome.storage.local.set({ oauthAccessToken: token });
+      return user;
+    } catch (err) {
+      if (!this._isFirebaseAudienceMismatchError(err)) {
+        throw err;
+      }
+      throw new Error(this._buildAudienceMismatchMessage());
+    }
   }
 
   async authenticate() {
     this._checkFirebase();
     this._validateOAuthConfigOrThrow();
 
-    // Clear any cached token first so Chrome always shows the account chooser.
-    const existingToken = await this._getAuthToken(false).catch(() => null);
-    if (existingToken) {
-      await this._clearAuthTokenCache(existingToken);
-    }
-
-    const token = await this._getAuthToken(true);
+    const token = await this._launchWebAuthFlowForToken();
 
     try {
-      return await this._signInWithToken(token);
+      const user = await this._signInWithToken(token);
+      await chrome.storage.local.set({ oauthAccessToken: token });
+      return user;
     } catch (err) {
       if (!this._isFirebaseAudienceMismatchError(err)) {
         throw err;
       }
 
-      // Clear any stale Chrome identity cache and retry once.
-      await this._clearAuthTokenCache(token);
-
+      // Retry once on audience mismatch.
       try {
-        const retryToken = await this._getAuthToken(true);
-        return await this._signInWithToken(retryToken);
+        const retryToken = await this._launchWebAuthFlowForToken();
+        const user = await this._signInWithToken(retryToken);
+        await chrome.storage.local.set({ oauthAccessToken: retryToken });
+        return user;
       } catch (retryErr) {
         if (this._isFirebaseAudienceMismatchError(retryErr)) {
           throw new Error(this._buildAudienceMismatchMessage());
@@ -367,6 +451,8 @@ class FirebaseStorageService {
   }
 
   async signOut() {
+    // Clear the cached OAuth token
+    await chrome.storage.local.remove('oauthAccessToken');
     return new Promise((resolve) => {
       chrome.identity.getAuthToken({ interactive: false }, async (token) => {
         if (token) {

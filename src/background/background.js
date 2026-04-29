@@ -13,6 +13,10 @@ const STORAGE_KEYS = {
   SETTINGS: 'settings'
 };
 
+const ICON_PATHS = {
+  NOTIFICATION: 'src/assets/icons/icon128.svg'
+};
+
 // Initialize extension on install
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
@@ -34,9 +38,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 // Also create context menu on startup to ensure it's always available
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
   console.log('Vocabulary Note extension started');
   createContextMenu();
+  // Recreate alarm on startup so reminder-time changes are always applied.
+  await setupDailyAlarm();
+  await checkAndNotifyDueWords();
 });
 
 // Handle alarm triggers
@@ -81,6 +88,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ dueCount: count });
     });
     return true; // Keep channel open for async response
+  } else if (request.action === 'launchOAuthFlow') {
+    // Run OAuth flow from background. The popup will likely close when the
+    // auth window opens, so we store the token in chrome.storage.local.
+    // When the popup reopens, it restores the session from that cached token.
+    launchOAuthFlow()
+      .then(token => {
+        chrome.storage.local.set({ oauthAccessToken: token });
+        sendResponse({ success: true, token });
+      })
+      .catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
+    return true;
+  }
+});
+
+// Keep alarm schedule in sync when options save new reminder settings.
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[STORAGE_KEYS.SETTINGS]) {
+    setupDailyAlarm();
   }
 });
 
@@ -135,7 +162,7 @@ async function checkAndNotifyDueWords() {
       if (settings.showNotifications !== false) {
         await chrome.notifications.create({
           type: 'basic',
-          iconUrl: '../icons/icon128.png',
+          iconUrl: chrome.runtime.getURL(ICON_PATHS.NOTIFICATION),
           title: 'Vocabulary Review',
           message: `You have ${dueCount} word${dueCount > 1 ? 's' : ''} to review today!`,
           priority: 2,
@@ -158,8 +185,8 @@ async function checkAndNotifyDueWords() {
  */
 chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
   if (buttonIndex === 0) {
-    // Open popup
-    chrome.action.openPopup();
+    // Reviews live in the options page; opening popup would not show review UI.
+    chrome.runtime.openOptionsPage();
   }
   chrome.notifications.clear(notificationId);
 });
@@ -217,6 +244,48 @@ async function getSettings() {
 }
 
 /**
+ * Run the Google OAuth flow via chrome.identity.launchWebAuthFlow.
+ * Called from the background so the popup closing doesn't kill the flow.
+ */
+function launchOAuthFlow() {
+  return new Promise((resolve, reject) => {
+    const manifest = chrome.runtime.getManifest();
+    const clientId = manifest.oauth2.client_id;
+    const redirectUrl = chrome.identity.getRedirectURL();
+    const scopes = (manifest.oauth2.scopes || ['openid', 'email', 'profile']).join(' ');
+
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('redirect_uri', redirectUrl);
+    authUrl.searchParams.set('response_type', 'token');
+    authUrl.searchParams.set('scope', scopes);
+    authUrl.searchParams.set('prompt', 'select_account');
+
+    chrome.identity.launchWebAuthFlow(
+      { url: authUrl.toString(), interactive: true },
+      (responseUrl) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        if (!responseUrl) {
+          reject(new Error('No response from auth flow'));
+          return;
+        }
+        const hash = new URL(responseUrl).hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
+        if (!token) {
+          reject(new Error('No access token in response'));
+          return;
+        }
+        resolve(token);
+      }
+    );
+  });
+}
+
+/**
  * Handle pronunciation playback
  */
 async function handlePronunciation(word, audioUrl) {
@@ -224,10 +293,5 @@ async function handlePronunciation(word, audioUrl) {
   // Background script can't play audio directly in MV3
   console.log('Pronunciation request:', word);
 }
-
-// Check for due words on startup
-chrome.runtime.onStartup.addListener(async () => {
-  await checkAndNotifyDueWords();
-});
 
 console.log('Vocabulary Note background script loaded');

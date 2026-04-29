@@ -34,7 +34,7 @@ function PopupAppContent() {
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [editingWord, setEditingWord] = React.useState(null);
 
-  // Auth state listener
+  // Auth state listener + silent session restore
   React.useEffect(() => {
     if (!auth || typeof auth.onAuthStateChanged !== 'function') {
       setAuthLoading(false);
@@ -44,9 +44,17 @@ function PopupAppContent() {
       setUser(currentUser);
       // Mirror auth state to local storage so the content script can read it
       chrome.storage.local.set({ isLoggedIn: !!currentUser });
+
+      // On first load, if Firebase has no user, try restoring from cached token
       if (!authInitialized.current) {
         authInitialized.current = true;
-        setAuthLoading(false);
+        if (!currentUser) {
+          firebaseStorage.authenticateSilently()
+            .catch(() => {}) // No cached token or expired — stay on sign-in screen
+            .finally(() => setAuthLoading(false));
+        } else {
+          setAuthLoading(false);
+        }
       }
     });
     return unsubscribe;
@@ -109,14 +117,18 @@ function PopupAppContent() {
     }
   };
 
-  const handleSignIn = async () => {
+  const handleSignIn = () => {
     setSignInError(null);
-    try {
-      await firebaseStorage.authenticate();
-      // onAuthStateChanged fires and updates user state, which triggers loadData
-    } catch (error) {
-      setSignInError(error.message);
-    }
+    // Fire-and-forget: ask background to run the OAuth flow.
+    // The popup will close when the auth window opens — that's fine.
+    // The background stores the token in chrome.storage.local, and when
+    // the user reopens the popup, authenticateSilently() restores the session.
+    chrome.runtime.sendMessage({ action: 'launchOAuthFlow' }, (resp) => {
+      // This callback only fires if the popup is still open (unlikely).
+      if (resp && !resp.success) {
+        setSignInError(resp.error || 'Authentication failed');
+      }
+    });
   };
 
   const handleSettingsClick = () => {
