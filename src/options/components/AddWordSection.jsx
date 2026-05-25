@@ -86,7 +86,7 @@ function AddWordSection({ onVocabularyUpdate, onWordAdded, service }) {
     }
   }
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !isLoading) {
       if (e.ctrlKey || e.metaKey) {
         handleSave()
@@ -110,7 +110,7 @@ function AddWordSection({ onVocabularyUpdate, onWordAdded, service }) {
               placeholder="Enter a word..."
               value={word}
               onChange={(e) => setWord(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               disabled={isLoading}
               className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 bg-white shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:cursor-not-allowed transition"
             />
@@ -132,7 +132,7 @@ function AddWordSection({ onVocabularyUpdate, onWordAdded, service }) {
             placeholder="Enter the meaning..."
             value={meaning}
             onChange={(e) => setMeaning(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             disabled={isLoading}
             rows="4"
             className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 bg-white shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:cursor-not-allowed transition resize-none"

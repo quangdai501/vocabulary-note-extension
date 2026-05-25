@@ -4,7 +4,7 @@
   "description": "Vocabulary learning extension with React options page",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:ui & npm run build:content & wait",
+    "build": "npm run build:ui && npm run build:content",
     "build:ui": "vite build",
     "build:content": "vite build --config vite.content.config.js",
     "preview": "vite preview",

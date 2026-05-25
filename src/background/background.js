@@ -181,13 +181,20 @@ async function checkAndNotifyDueWords() {
 }
 
 /**
- * Handle notification button clicks
+ * Handle notification button clicks (Windows/Linux — macOS ignores buttons)
  */
 chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
   if (buttonIndex === 0) {
-    // Reviews live in the options page; opening popup would not show review UI.
     chrome.runtime.openOptionsPage();
   }
+  chrome.notifications.clear(notificationId);
+});
+
+/**
+ * Handle notification body click (fallback for macOS, which doesn't support buttons)
+ */
+chrome.notifications.onClicked.addListener((notificationId) => {
+  chrome.runtime.openOptionsPage();
   chrome.notifications.clear(notificationId);
 });
 

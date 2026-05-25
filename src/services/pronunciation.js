@@ -72,18 +72,42 @@ class PronunciationService {
           return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
+        const speak = () => {
+          const voices = window.speechSynthesis.getVoices();
+          if (voices.length === 0) {
+            console.warn('No speech synthesis voices available');
+            resolve(false);
+            return;
+          }
 
-        utterance.onend = () => resolve(true);
-        utterance.onerror = (error) => {
-          console.error('Speech synthesis error:', error);
-          resolve(false);
+          const utterance = new SpeechSynthesisUtterance(word);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.9;
+          utterance.pitch = 1;
+
+          utterance.onend = () => resolve(true);
+          utterance.onerror = (error) => {
+            console.error('Speech synthesis error:', error);
+            resolve(false);
+          };
+
+          window.speechSynthesis.speak(utterance);
         };
 
-        window.speechSynthesis.speak(utterance);
+        // Voices may be loaded asynchronously on some platforms
+        if (window.speechSynthesis.getVoices().length > 0) {
+          speak();
+        } else {
+          window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.onvoiceschanged = null;
+            speak();
+          };
+          // Timeout in case voiceschanged never fires
+          setTimeout(() => {
+            window.speechSynthesis.onvoiceschanged = null;
+            speak();
+          }, 500);
+        }
       } catch (error) {
         console.error('Speech synthesis error:', error);
         resolve(false);
